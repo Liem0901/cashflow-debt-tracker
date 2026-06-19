@@ -40,7 +40,7 @@ function checkMonthReset(data) {
 }
 
 export function AppProvider({ children }) {
-  const { data, setData, loading, syncStatus } = useAppData();
+  const { data, setData, loading, refreshing, refreshData, syncStatus } = useAppData();
 
   useEffect(() => {
     if (loading) return;
@@ -273,6 +273,8 @@ export function AppProvider({ children }) {
       monthKey,
       stats,
       syncStatus,
+      refreshing,
+      refreshData,
       updateSalary,
       updateBudgets,
       addCashTransaction,
@@ -292,6 +294,8 @@ export function AppProvider({ children }) {
       monthKey,
       stats,
       syncStatus,
+      refreshing,
+      refreshData,
       updateSalary,
       updateBudgets,
       addCashTransaction,

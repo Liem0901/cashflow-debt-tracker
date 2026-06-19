@@ -23,6 +23,58 @@ function writeLocalStorage(userId, data) {
   }
 }
 
+async function loadRemoteData(userId, cloudEnabled) {
+  const local = readLocalStorage(userId);
+
+  if (!cloudEnabled) {
+    return {
+      data: local || createInitialData(),
+      syncStatus: 'local',
+    };
+  }
+
+  try {
+    const remote = await fetchUserData(userId);
+
+    if (remote.offline) {
+      return {
+        data: local || createInitialData(),
+        syncStatus: 'local',
+      };
+    }
+
+    if (remote.data) {
+      writeLocalStorage(userId, remote.data);
+      return {
+        data: remote.data,
+        syncStatus: 'synced',
+      };
+    }
+
+    if (local) {
+      await saveUserData(userId, local);
+      return {
+        data: local,
+        syncStatus: 'synced',
+      };
+    }
+
+    const initial = createInitialData();
+    writeLocalStorage(userId, initial);
+    await saveUserData(userId, initial);
+    return {
+      data: initial,
+      syncStatus: 'synced',
+    };
+  } catch (error) {
+    console.warn('Cloud fetch failed, using localStorage:', error);
+    return {
+      data: local || createInitialData(),
+      syncStatus: 'error',
+    };
+  }
+}
+
 export function useAppData() {
   const { user, isFirebaseConfigured, isGuest } = useAuth();
   const userId = user?.uid || 'default-user';
@@ -31,10 +83,12 @@ export function useAppData() {
 
   const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [syncStatus, setSyncStatus] = useState('loading');
 
   const saveTimerRef = useRef(null);
   const isHydratingRef = useRef(true);
+  const refreshingRef = useRef(false);
 
   const persistToCloud = useCallback(
     async (payload, immediate = false) => {
@@ -80,6 +134,22 @@ export function useAppData() {
     [persistToCloud, userId]
   );
 
+  const refreshData = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    setSyncStatus(cloudEnabled ? 'syncing' : 'local');
+
+    try {
+      const result = await loadRemoteData(userId, cloudEnabled);
+      setDataState(result.data);
+      setSyncStatus(result.syncStatus);
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
+  }, [cloudEnabled, userId]);
+
   useEffect(() => {
     let cancelled = false;
     isHydratingRef.current = true;
@@ -87,51 +157,14 @@ export function useAppData() {
     setSyncStatus('loading');
 
     async function hydrate() {
-      const local = readLocalStorage(userId);
+      const result = await loadRemoteData(userId, cloudEnabled);
 
-      if (!cloudEnabled) {
-        if (!cancelled) {
-          setDataState(local || createInitialData());
-          setSyncStatus('local');
-          isHydratingRef.current = false;
-          setLoading(false);
-        }
-        return;
-      }
+      if (cancelled) return;
 
-      try {
-        const remote = await fetchUserData(userId);
-
-        if (cancelled) return;
-
-        if (remote.offline) {
-          setSyncStatus('local');
-          setDataState(local || createInitialData());
-        } else if (remote.data) {
-          setDataState(remote.data);
-          writeLocalStorage(userId, remote.data);
-          setSyncStatus('synced');
-        } else if (local) {
-          setDataState(local);
-          setSyncStatus('synced');
-          await saveUserData(userId, local);
-        } else {
-          const initial = createInitialData();
-          setDataState(initial);
-          writeLocalStorage(userId, initial);
-          setSyncStatus('synced');
-          await saveUserData(userId, initial);
-        }
-      } catch (error) {
-        console.warn('Cloud fetch failed, using localStorage:', error);
-        setDataState(local || createInitialData());
-        setSyncStatus('error');
-      } finally {
-        if (!cancelled) {
-          isHydratingRef.current = false;
-          setLoading(false);
-        }
-      }
+      setDataState(result.data);
+      setSyncStatus(result.syncStatus);
+      isHydratingRef.current = false;
+      setLoading(false);
     }
 
     hydrate();
@@ -142,5 +175,5 @@ export function useAppData() {
     };
   }, [userId, cloudEnabled]);
 
-  return { data, setData, loading, syncStatus };
+  return { data, setData, loading, refreshing, refreshData, syncStatus };
 }
