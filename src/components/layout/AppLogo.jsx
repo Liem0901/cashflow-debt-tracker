@@ -2,7 +2,7 @@ export default function AppLogo() {
   return (
     <div className="flex items-center gap-3">
       <img
-        src="/favicon.svg"
+        src="/icons/icon.svg"
         alt=""
         className="h-9 w-9 shrink-0 rounded-xl"
         aria-hidden

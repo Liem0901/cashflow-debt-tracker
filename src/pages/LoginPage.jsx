@@ -25,7 +25,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 flex flex-col items-center text-center">
           <img
-            src="/favicon.svg"
+            src="/icons/icon.svg"
             alt=""
             className="mb-4 h-16 w-16 rounded-2xl"
             aria-hidden
