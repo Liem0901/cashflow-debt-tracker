@@ -5,13 +5,14 @@ import LoginPage from '../../pages/LoginPage';
 import App from '../../App';
 
 export default function AuthenticatedApp() {
-  const { user, loading, requiresAuth } = useAuth();
+  const { user, loading, isAuthBypassed } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
-  if (requiresAuth && !user) {
+  // Local dev: skip login. Production (Vercel): always show login until signed in.
+  if (!isAuthBypassed && !user) {
     return <LoginPage />;
   }
 

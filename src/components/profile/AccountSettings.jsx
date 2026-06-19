@@ -3,9 +3,9 @@ import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AccountSettings() {
-  const { user, signOut, requiresAuth } = useAuth();
+  const { user, signOut, isAuthBypassed } = useAuth();
 
-  if (!requiresAuth || !user) return null;
+  if (isAuthBypassed || !user) return null;
 
   return (
     <Card>

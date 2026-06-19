@@ -32,8 +32,8 @@ export default function LoginPage() {
           <div className="rounded-2xl border border-portfolio-border bg-portfolio-card p-4 text-sm text-portfolio-gray">
             <p className="font-medium text-white">Firebase not configured</p>
             <p className="mt-2">
-              Add your Firebase web app keys to <code className="text-white">.env.local</code> and
-              redeploy.
+              Add <code className="text-white">VITE_FIREBASE_*</code> environment variables in your
+              Vercel project settings, then redeploy.
             </p>
           </div>
         ) : (

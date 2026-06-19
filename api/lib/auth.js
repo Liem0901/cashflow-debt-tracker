@@ -2,20 +2,25 @@ import admin from 'firebase-admin';
 
 const globalWithFirebase = globalThis;
 
+function trimEnv(value) {
+  return typeof value === 'string' ? value.trim() : value;
+}
+
 function getServiceAccount() {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  const serviceAccountJson = trimEnv(process.env.FIREBASE_SERVICE_ACCOUNT);
+  if (serviceAccountJson) {
+    return JSON.parse(serviceAccountJson);
   }
 
-  if (
-    process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
-  ) {
+  const projectId = trimEnv(process.env.FIREBASE_PROJECT_ID);
+  const clientEmail = trimEnv(process.env.FIREBASE_CLIENT_EMAIL);
+  const privateKey = trimEnv(process.env.FIREBASE_PRIVATE_KEY);
+
+  if (projectId && clientEmail && privateKey) {
     return {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      projectId,
+      clientEmail,
+      privateKey: privateKey.replace(/\\n/g, '\n'),
     };
   }
 

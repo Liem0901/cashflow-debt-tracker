@@ -6,14 +6,7 @@ export default function InstallApp() {
   const { canInstall, isInstalled, install } = useInstallPwa();
 
   if (isInstalled) {
-    return (
-      <Card>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-          Install App
-        </h2>
-        <p className="text-sm text-portfolio-gray">App is installed on this device.</p>
-      </Card>
-    );
+    return null;
   }
 
   return (
