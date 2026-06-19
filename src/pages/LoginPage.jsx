@@ -91,7 +91,7 @@ export default function LoginPage() {
               {signingIn ? 'Signing in…' : 'Continue with Google'}
             </Button>
             <p className="mt-2 text-center text-xs text-portfolio-gray">
-              Google syncs your data to the cloud.
+              Google syncs your data with Firestore.
             </p>
           </>
         )}

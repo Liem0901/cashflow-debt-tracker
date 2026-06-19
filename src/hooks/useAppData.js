@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createInitialData, getStorageKey } from '../data/initialData';
-import { fetchAppData, saveAppData, setAuthTokenProvider } from '../services/api';
+import { fetchUserData, saveUserData } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 import { isAuthBypassed } from '../lib/firebase';
 
@@ -24,7 +24,7 @@ function writeLocalStorage(userId, data) {
 }
 
 export function useAppData() {
-  const { user, getIdToken, isFirebaseConfigured, isGuest } = useAuth();
+  const { user, isFirebaseConfigured, isGuest } = useAuth();
   const userId = user?.uid || 'default-user';
   const cloudEnabled =
     isFirebaseConfigured && !isAuthBypassed && !isGuest && Boolean(user);
@@ -35,19 +35,6 @@ export function useAppData() {
 
   const saveTimerRef = useRef(null);
   const isHydratingRef = useRef(true);
-  const latestDataRef = useRef(data);
-
-  useEffect(() => {
-    latestDataRef.current = data;
-  }, [data]);
-
-  useEffect(() => {
-    if (cloudEnabled) {
-      setAuthTokenProvider(getIdToken);
-    } else {
-      setAuthTokenProvider(null);
-    }
-  }, [getIdToken, cloudEnabled]);
 
   const persistToCloud = useCallback(
     async (payload, immediate = false) => {
@@ -56,7 +43,7 @@ export function useAppData() {
       const runSave = async () => {
         setSyncStatus('syncing');
         try {
-          const result = await saveAppData(payload);
+          const result = await saveUserData(userId, payload);
           if (result.offline) {
             setSyncStatus('local');
           } else {
@@ -77,7 +64,7 @@ export function useAppData() {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(runSave, SAVE_DEBOUNCE_MS);
     },
-    [cloudEnabled]
+    [cloudEnabled, userId]
   );
 
   const setData = useCallback(
@@ -86,7 +73,6 @@ export function useAppData() {
         const next = typeof value === 'function' ? value(prev) : value;
         if (next === prev) return prev;
         writeLocalStorage(userId, next);
-        latestDataRef.current = next;
         persistToCloud(next, options.immediate);
         return next;
       });
@@ -114,7 +100,7 @@ export function useAppData() {
       }
 
       try {
-        const remote = await fetchAppData();
+        const remote = await fetchUserData(userId);
 
         if (cancelled) return;
 
@@ -128,18 +114,18 @@ export function useAppData() {
         } else if (local) {
           setDataState(local);
           setSyncStatus('synced');
-          await saveAppData(local);
+          await saveUserData(userId, local);
         } else {
           const initial = createInitialData();
           setDataState(initial);
           writeLocalStorage(userId, initial);
           setSyncStatus('synced');
-          await saveAppData(initial);
+          await saveUserData(userId, initial);
         }
       } catch (error) {
         console.warn('Cloud fetch failed, using localStorage:', error);
         setDataState(local || createInitialData());
-        setSyncStatus('local');
+        setSyncStatus('error');
       } finally {
         if (!cancelled) {
           isHydratingRef.current = false;

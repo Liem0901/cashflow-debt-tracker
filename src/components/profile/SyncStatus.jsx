@@ -1,6 +1,6 @@
 const statusConfig = {
   loading: { label: 'Connecting...', color: 'bg-portfolio-elevated text-portfolio-gray', dot: 'bg-portfolio-gray' },
-  synced: { label: 'Synced to cloud', color: 'bg-portfolio-elevated text-white border border-portfolio-border', dot: 'bg-white' },
+  synced: { label: 'Synced to Firestore', color: 'bg-portfolio-elevated text-white border border-portfolio-border', dot: 'bg-white' },
   syncing: { label: 'Saving...', color: 'bg-portfolio-elevated text-portfolio-light border border-portfolio-border', dot: 'bg-portfolio-light animate-pulse' },
   local: { label: 'Local only (no cloud)', color: 'bg-portfolio-elevated text-portfolio-gray border border-portfolio-border', dot: 'bg-portfolio-gray' },
   error: { label: 'Sync error — saved locally', color: 'bg-portfolio-black text-white border border-white', dot: 'bg-white' },

@@ -192,21 +192,20 @@ export default function EditTransactionModal({ transaction, onClose }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              label="Date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-            <Input
-              label="Description"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          <Input
+            label="Date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Description"
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="secondary" className="flex-1" onClick={handleDelete}>

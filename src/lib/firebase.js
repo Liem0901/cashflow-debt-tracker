@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 function trimEnv(value) {
   return typeof value === 'string' ? value.trim() : value;
@@ -29,4 +30,5 @@ export const requiresAuth = isFirebaseConfigured && !isAuthBypassed;
 const app = isFirebaseConfigured && !isAuthBypassed ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();
