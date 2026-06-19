@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon.svg'],
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Cashflow & Debt Tracker',
         short_name: 'Cashflow',
@@ -20,14 +20,14 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'icons/icon.svg',
-            sizes: '512x512',
+            src: 'favicon.svg',
+            sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any',
           },
           {
-            src: 'icons/icon.svg',
-            sizes: '512x512',
+            src: 'favicon.svg',
+            sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'maskable',
           },
