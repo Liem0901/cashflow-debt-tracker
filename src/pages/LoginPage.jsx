@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 
 export default function LoginPage() {
-  const { signInWithGoogle, error, isFirebaseConfigured } = useAuth();
+  const { signInWithGoogle, signInAsGuest, error, isFirebaseConfigured, setError } = useAuth();
+  const [name, setName] = useState('');
   const [signingIn, setSigningIn] = useState(false);
+
+  const handleGuestSignIn = (e) => {
+    e.preventDefault();
+    setError(null);
+    signInAsGuest(name);
+  };
 
   const handleGoogleSignIn = async () => {
     setSigningIn(true);
@@ -28,20 +36,37 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {!isFirebaseConfigured ? (
-          <div className="rounded-2xl border border-portfolio-border bg-portfolio-card p-4 text-sm text-portfolio-gray">
-            <p className="font-medium text-white">Firebase not configured</p>
-            <p className="mt-2">
-              Add <code className="text-white">VITE_FIREBASE_*</code> environment variables in your
-              Vercel project settings, then redeploy.
-            </p>
-          </div>
-        ) : (
+        <form onSubmit={handleGuestSignIn} className="space-y-3">
+          <Input
+            label="Your name"
+            type="text"
+            placeholder="e.g. William"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            required
+          />
+          <Button type="submit" size="lg" className="w-full">
+            Continue as Guest
+          </Button>
+          <p className="text-center text-xs text-portfolio-gray">
+            Guest mode saves data on this device only.
+          </p>
+        </form>
+
+        {isFirebaseConfigured && (
           <>
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-portfolio-border" />
+              <span className="text-xs text-portfolio-gray">or</span>
+              <div className="h-px flex-1 bg-portfolio-border" />
+            </div>
+
             <Button
               type="button"
               size="lg"
-              className="flex w-full items-center justify-center gap-3 bg-white text-black hover:bg-portfolio-light"
+              variant="secondary"
+              className="flex w-full items-center justify-center gap-3"
               onClick={handleGoogleSignIn}
               disabled={signingIn}
             >
@@ -65,18 +90,17 @@ export default function LoginPage() {
               </svg>
               {signingIn ? 'Signing in…' : 'Continue with Google'}
             </Button>
-
-            {error && (
-              <p className="mt-3 rounded-xl border border-white/20 bg-portfolio-card px-3 py-2 text-center text-xs text-white">
-                {error}
-              </p>
-            )}
+            <p className="mt-2 text-center text-xs text-portfolio-gray">
+              Google syncs your data to the cloud.
+            </p>
           </>
         )}
 
-        <p className="mt-6 text-center text-xs text-portfolio-gray">
-          Your data syncs securely to your own cloud account.
-        </p>
+        {error && (
+          <p className="mt-3 rounded-xl border border-white/20 bg-portfolio-card px-3 py-2 text-center text-xs text-white">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
