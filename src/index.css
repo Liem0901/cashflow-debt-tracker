@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
+    background-color: #000000;
+  }
+
+  body {
+    @apply font-sans text-portfolio-white antialiased;
+    background-color: #000000;
+  }
+
+  #root {
+    min-height: 100vh;
+    background-color: #000000;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-sans tracking-tight;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    @apply font-sans outline-none;
+  }
+
+  input[type='date'] {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .text-amount {
+    @apply tabular-nums tracking-tight;
+  }
+
+  .amount-input {
+    @apply tabular-nums tracking-[0.08em];
+  }
+}
+
+@layer utilities {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .page-padding {
+    @apply px-4 pb-28 pt-4;
+  }
+}
