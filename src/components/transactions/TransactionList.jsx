@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { getPaymentLabel } from './PaymentMethodButtons';
+import { getTransactionCalendarDate } from '../../utils/calculations';
 import CategoryIcon from './CategoryIcon';
 import EditTransactionModal from './EditTransactionModal';
+import { getPaymentLabel } from './PaymentMethodButtons';
+import TransactionStatusBadge from './TransactionStatusBadge';
 
 export default function TransactionList({
   transactions,
+  debts = [],
   emptyMessage = 'No transactions yet',
   editable = false,
 }) {
@@ -38,8 +41,8 @@ export default function TransactionList({
                   {tx.description || tx.category}
                 </p>
                 <p className="text-xs text-portfolio-gray">
-                  {tx.category} · {formatDate(tx.date)}
-                  {tx.type === 'cash' && (
+                  {tx.category} · {formatDate(getTransactionCalendarDate(tx, debts))}
+                  {(tx.type === 'cash' || tx.paymentMethod) && (
                     <span> · {getPaymentLabel(tx.paymentMethod)}</span>
                   )}
                 </p>
@@ -47,9 +50,7 @@ export default function TransactionList({
             </div>
             <div className="shrink-0 text-right">
               <p className="text-amount font-semibold text-white">{formatCurrency(tx.amount)}</p>
-              <span className="inline-block rounded-full border border-portfolio-border px-2 py-0.5 text-[10px] font-medium uppercase text-portfolio-gray">
-                {tx.type}
-              </span>
+              <TransactionStatusBadge transaction={tx} debts={debts} />
             </div>
           </button>
         ))}

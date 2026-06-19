@@ -3,7 +3,6 @@ import {
   BudgetSettings,
   DataManagement,
 } from '../components/profile/ProfileSections';
-import InstallApp from '../components/profile/InstallApp';
 import AccountSettings from '../components/profile/AccountSettings';
 import SyncStatus from '../components/profile/SyncStatus';
 import { useApp } from '../context/AppContext';
@@ -21,7 +20,6 @@ export default function Profile() {
       <SyncStatus status={syncStatus} />
 
       <AccountSettings />
-      <InstallApp />
       <SalarySettings />
       <BudgetSettings />
       <DataManagement />

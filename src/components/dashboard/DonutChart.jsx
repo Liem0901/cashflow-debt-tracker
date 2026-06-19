@@ -3,15 +3,15 @@ import Card from '../ui/Card';
 import { formatCurrency } from '../../utils/formatters';
 
 const SEGMENT_COLORS = {
-  'Cash Expenses': '#FFD700',
+  Expenses: '#FFD700',
   Debt: '#FF1744',
   'Safe Balance': '#00FFAA',
 };
 
-export default function DonutChart({ cashExpenses, upcomingDebt, safeBalance }) {
+export default function DonutChart({ totalExpenses, upcomingDebt, safeBalance }) {
   const safeDisplay = Math.max(0, safeBalance);
   const data = [
-    { name: 'Cash Expenses', value: cashExpenses },
+    { name: 'Expenses', value: totalExpenses },
     { name: 'Debt', value: upcomingDebt },
     { name: 'Safe Balance', value: safeDisplay },
   ].filter((d) => d.value > 0);

@@ -7,6 +7,7 @@ import {
 import { getCurrentMonthKey } from '../utils/formatters';
 import {
   getCashExpenses,
+  getTotalExpenses,
   getUpcomingDebtTotal,
   getSafeBalance,
   getDebtsDueThisMonth,
@@ -49,9 +50,10 @@ export function AppProvider({ children }) {
   const monthKey = data.currentMonth || getCurrentMonthKey();
 
   const stats = useMemo(() => {
+    const totalExpenses = getTotalExpenses(data.transactions, monthKey, data.debts);
     const cashExpenses = getCashExpenses(data.transactions, monthKey);
-    const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey);
-    const safeBalance = getSafeBalance(data.salary, cashExpenses, upcomingDebt);
+    const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey, data.transactions);
+    const safeBalance = getSafeBalance(data.salary, totalExpenses, upcomingDebt);
     const totalActiveDebt = getTotalActiveDebt(data.debts);
     const categorySpending = getCategorySpending(data.transactions, monthKey);
     const debtsDueThisMonth = getDebtsDueThisMonth(data.debts, monthKey);
@@ -65,6 +67,7 @@ export function AppProvider({ children }) {
 
     return {
       cashExpenses,
+      totalExpenses,
       upcomingDebt,
       safeBalance,
       totalActiveDebt,
@@ -114,15 +117,7 @@ export function AppProvider({ children }) {
   );
 
   const addDebtTransaction = useCallback(
-    ({ amount, provider, category, dueDate, description, date }) => {
-      const transaction = {
-        id: generateId('tx'),
-        type: 'debt',
-        amount: Number(amount),
-        category,
-        description: description || provider,
-        date: date || dueDate,
-      };
+    ({ amount, provider, category, dueDate, description }) => {
       const debt = {
         id: generateId('debt'),
         name: provider,
@@ -131,6 +126,15 @@ export function AppProvider({ children }) {
         dueDate,
         category,
         status: 'active',
+      };
+      const transaction = {
+        id: generateId('tx'),
+        type: 'debt',
+        debtId: debt.id,
+        amount: Number(amount),
+        category,
+        description: description || provider,
+        date: dueDate,
       };
       setData((prev) => ({
         ...prev,
@@ -192,19 +196,44 @@ export function AppProvider({ children }) {
     [setData]
   );
 
-  const updateTransaction = useCallback(
-    (transactionId, updates) => {
+  const markDebtUnpaid = useCallback(
+    (debtId) => {
       setData((prev) => ({
         ...prev,
-        transactions: prev.transactions.map((t) => {
-          if (t.id !== transactionId) return t;
-          return {
-            ...t,
-            ...updates,
-            amount: Number(updates.amount ?? t.amount),
-          };
-        }),
+        debts: prev.debts.map((d) =>
+          d.id === debtId
+            ? { ...d, remaining: Number(d.amount), status: 'active' }
+            : d
+        ),
       }));
+    },
+    [setData]
+  );
+
+  const updateTransaction = useCallback(
+    (transactionId, updates) => {
+      setData((prev) => {
+        const existing = prev.transactions.find((t) => t.id === transactionId);
+        const nextDebts =
+          existing?.debtId && updates.date
+            ? prev.debts.map((d) =>
+                d.id === existing.debtId ? { ...d, dueDate: updates.date } : d
+              )
+            : prev.debts;
+
+        return {
+          ...prev,
+          debts: nextDebts,
+          transactions: prev.transactions.map((t) => {
+            if (t.id !== transactionId) return t;
+            return {
+              ...t,
+              ...updates,
+              amount: Number(updates.amount ?? t.amount),
+            };
+          }),
+        };
+      });
     },
     [setData]
   );
@@ -251,6 +280,7 @@ export function AppProvider({ children }) {
       addDebtManually,
       payDebt,
       markDebtPaid,
+      markDebtUnpaid,
       updateTransaction,
       deleteTransaction,
       exportData,
@@ -269,6 +299,7 @@ export function AppProvider({ children }) {
       addDebtManually,
       payDebt,
       markDebtPaid,
+      markDebtUnpaid,
       updateTransaction,
       deleteTransaction,
       exportData,

@@ -1,4 +1,5 @@
 import { isSameMonth } from './formatters';
+import { getTransactionPaidStatus } from './transactionStatus';
 
 export function getCashExpenses(transactions, monthKey) {
   return transactions
@@ -6,10 +7,25 @@ export function getCashExpenses(transactions, monthKey) {
     .reduce((sum, t) => sum + Number(t.amount), 0);
 }
 
-export function getUpcomingDebtTotal(debts, monthKey) {
+export function getTotalExpenses(transactions, monthKey, debts = []) {
+  return transactions
+    .filter((t) => isSameMonth(getTransactionCalendarDate(t, debts), monthKey))
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+}
+
+function isDebtCountedInExpenses(debt, transactions, debts, monthKey) {
+  const linkedTx = transactions.find((t) => t.debtId === debt.id);
+  if (!linkedTx) return false;
+  return isSameMonth(getTransactionCalendarDate(linkedTx, debts), monthKey);
+}
+
+export function getUpcomingDebtTotal(debts, monthKey, transactions = []) {
   return debts
     .filter((d) => d.status !== 'paid' && isSameMonth(d.dueDate, monthKey))
-    .reduce((sum, d) => sum + Number(d.remaining), 0);
+    .reduce((sum, d) => {
+      if (isDebtCountedInExpenses(d, transactions, debts, monthKey)) return sum;
+      return sum + Number(d.remaining);
+    }, 0);
 }
 
 export function getTotalActiveDebt(debts) {
@@ -18,8 +34,8 @@ export function getTotalActiveDebt(debts) {
     .reduce((sum, d) => sum + Number(d.remaining), 0);
 }
 
-export function getSafeBalance(salary, cashExpenses, upcomingDebt) {
-  return Number(salary) - cashExpenses - upcomingDebt;
+export function getSafeBalance(salary, totalExpenses, upcomingDebt) {
+  return Number(salary) - totalExpenses - upcomingDebt;
 }
 
 export function getCategorySpending(transactions, monthKey) {
@@ -44,19 +60,43 @@ export function getRecentTransactions(transactions, limit = 5) {
     .slice(0, limit);
 }
 
-export function getDailyExpenses(transactions, monthKey, type = 'cash') {
+function getTransactionCalendarDate(transaction, debts = []) {
+  if (transaction.type === 'debt' && transaction.debtId) {
+    const debt = debts.find((d) => d.id === transaction.debtId);
+    if (debt?.dueDate) return debt.dueDate;
+  }
+  return transaction.date;
+}
+
+export { getTransactionCalendarDate };
+
+export function getDailyExpenses(transactions, monthKey, type = 'all', debts = []) {
   const daily = {};
   transactions
-    .filter((t) => t.type === type && isSameMonth(t.date, monthKey))
+    .filter((t) => type === 'all' || t.type === type)
     .forEach((t) => {
-      daily[t.date] = (daily[t.date] || 0) + Number(t.amount);
+      const calendarDate = getTransactionCalendarDate(t, debts);
+      if (!isSameMonth(calendarDate, monthKey)) return;
+      daily[calendarDate] = (daily[calendarDate] || 0) + Number(t.amount);
     });
   return daily;
 }
 
-export function getTransactionsForDate(transactions, dateStr) {
+export function getDailyUnpaidDates(transactions, monthKey, debts = []) {
+  const unpaidDates = {};
+  transactions.forEach((t) => {
+    const calendarDate = getTransactionCalendarDate(t, debts);
+    if (!isSameMonth(calendarDate, monthKey)) return;
+    if (getTransactionPaidStatus(t, debts) === 'unpaid') {
+      unpaidDates[calendarDate] = true;
+    }
+  });
+  return unpaidDates;
+}
+
+export function getTransactionsForDate(transactions, dateStr, debts = []) {
   return transactions
-    .filter((t) => t.date === dateStr)
+    .filter((t) => getTransactionCalendarDate(t, debts) === dateStr)
     .sort((a, b) => Number(b.amount) - Number(a.amount));
 }
 

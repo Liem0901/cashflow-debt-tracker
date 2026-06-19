@@ -4,6 +4,7 @@ import ExpenseCalendar, { MonthSummary } from '../components/calendar/ExpenseCal
 import DayDetail from '../components/calendar/DayDetail';
 import {
   getDailyExpenses,
+  getDailyUnpaidDates,
   getTransactionsForDate,
 } from '../utils/calculations';
 import {
@@ -18,20 +19,25 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(todayISO());
 
   const dailyExpenses = useMemo(
-    () => getDailyExpenses(data.transactions, viewMonth),
-    [data.transactions, viewMonth]
+    () => getDailyExpenses(data.transactions, viewMonth, 'all', data.debts),
+    [data.transactions, data.debts, viewMonth]
+  );
+
+  const dailyUnpaid = useMemo(
+    () => getDailyUnpaidDates(data.transactions, viewMonth, data.debts),
+    [data.transactions, data.debts, viewMonth]
   );
 
   const dayTransactions = useMemo(
-    () => getTransactionsForDate(data.transactions, selectedDate),
-    [data.transactions, selectedDate]
+    () => getTransactionsForDate(data.transactions, selectedDate, data.debts),
+    [data.transactions, data.debts, selectedDate]
   );
 
   return (
     <div className="page-padding space-y-4 animate-fade-in">
       <header>
         <h1 className="text-xl font-bold text-white">Calendar</h1>
-        <p className="text-sm text-portfolio-gray">Daily cash expenses</p>
+        <p className="text-sm text-portfolio-gray">Daily expenses & pay-later</p>
       </header>
 
       <div className="flex items-center justify-between gap-2">
@@ -63,11 +69,12 @@ export default function CalendarPage() {
       <ExpenseCalendar
         monthKey={viewMonth}
         dailyExpenses={dailyExpenses}
+        dailyUnpaid={dailyUnpaid}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
 
-      <DayDetail dateStr={selectedDate} transactions={dayTransactions} />
+      <DayDetail dateStr={selectedDate} transactions={dayTransactions} debts={data.debts} />
     </div>
   );
 }

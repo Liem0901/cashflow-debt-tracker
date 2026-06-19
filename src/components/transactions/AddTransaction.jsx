@@ -41,7 +41,6 @@ export default function AddTransaction() {
         category,
         dueDate,
         description,
-        date,
       });
     }
 
@@ -115,7 +114,7 @@ export default function AddTransaction() {
       {mode === 'cash' && (
         <div>
           <label className="mb-2 block text-sm font-medium text-portfolio-gray">Payment method</label>
-          <PaymentMethodButtons selected={paymentMethod} onSelect={setPaymentMethod} />
+          <PaymentMethodButtons compact selected={paymentMethod} onSelect={setPaymentMethod} />
         </div>
       )}
 
@@ -138,7 +137,7 @@ export default function AddTransaction() {
             ))}
           </Select>
           <Input
-            label="Due Date"
+            label="Date"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}

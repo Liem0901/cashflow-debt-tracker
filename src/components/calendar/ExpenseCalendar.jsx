@@ -9,8 +9,15 @@ import {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function getHeatClass(amount, maxAmount) {
+function getHeatClass(amount, maxAmount, hasUnpaid) {
   if (!amount) return '';
+  if (hasUnpaid) {
+    if (maxAmount <= 0) return 'bg-metric-debt/20 text-metric-debt';
+    const ratio = amount / maxAmount;
+    if (ratio >= 0.75) return 'bg-metric-debt/35 text-metric-debt';
+    if (ratio >= 0.4) return 'bg-metric-debt/25 text-metric-debt';
+    return 'bg-metric-debt/15 text-metric-debt';
+  }
   if (maxAmount <= 0) return 'bg-portfolio-muted text-portfolio-light';
   const ratio = amount / maxAmount;
   if (ratio >= 0.75) return 'bg-white text-black';
@@ -18,9 +25,30 @@ function getHeatClass(amount, maxAmount) {
   return 'bg-portfolio-muted text-white';
 }
 
+function getCellClass({ amount, maxAmount, hasUnpaid, isToday, isSelected }) {
+  if (isSelected) {
+    return 'border-white bg-white text-black ring-2 ring-white/30';
+  }
+  if (isToday) {
+    return hasUnpaid
+      ? 'border-metric-debt/50 bg-metric-debt/15 text-white'
+      : 'border-portfolio-light bg-portfolio-elevated text-white';
+  }
+  if (amount) {
+    const heatClass = getHeatClass(amount, maxAmount, hasUnpaid);
+    const borderClass = hasUnpaid ? 'border-metric-debt/30' : 'border-transparent';
+    return `${borderClass} ${heatClass}`;
+  }
+  if (hasUnpaid) {
+    return 'border-metric-debt/30 bg-metric-debt/10 text-metric-debt';
+  }
+  return 'border-transparent bg-portfolio-elevated/50 text-portfolio-gray';
+}
+
 export default function ExpenseCalendar({
   monthKey,
   dailyExpenses,
+  dailyUnpaid = {},
   selectedDate,
   onSelectDate,
 }) {
@@ -51,24 +79,23 @@ export default function ExpenseCalendar({
           }
 
           const amount = dailyExpenses[dateStr] || 0;
+          const hasUnpaid = Boolean(dailyUnpaid[dateStr]);
           const isToday = dateStr === today;
           const isSelected = dateStr === selectedDate;
-          const heatClass = getHeatClass(amount, maxAmount);
+          const cellClass = getCellClass({
+            amount,
+            maxAmount,
+            hasUnpaid,
+            isToday,
+            isSelected,
+          });
 
           return (
             <button
               key={dateStr}
               type="button"
               onClick={() => onSelectDate(dateStr)}
-              className={`flex aspect-square flex-col items-center justify-center rounded-xl border transition-all ${
-                isSelected
-                  ? 'border-white bg-white text-black ring-2 ring-white/30'
-                  : isToday
-                    ? 'border-portfolio-light bg-portfolio-elevated text-white'
-                    : amount
-                      ? `border-transparent ${heatClass}`
-                      : 'border-transparent bg-portfolio-elevated/50 text-portfolio-gray'
-              }`}
+              className={`flex aspect-square flex-col items-center justify-center rounded-xl border transition-all ${cellClass}`}
             >
               <span className="text-sm font-semibold">
                 {Number(dateStr.split('-')[2])}
@@ -85,11 +112,17 @@ export default function ExpenseCalendar({
 
       <div className="mt-3 flex items-center justify-between border-t border-portfolio-border pt-3 text-xs text-portfolio-gray">
         <span>Tap a day for details</span>
-        <div className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded bg-portfolio-muted ring-1 ring-portfolio-border" />
-          <span className="mr-2">Low</span>
-          <span className="h-2.5 w-2.5 rounded bg-white" />
-          <span>High</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded bg-metric-debt/25 ring-1 ring-metric-debt/40" />
+            <span className="mr-1">Unpaid</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded bg-portfolio-muted ring-1 ring-portfolio-border" />
+            <span className="mr-1">Low</span>
+            <span className="h-2.5 w-2.5 rounded bg-white" />
+            <span>High</span>
+          </div>
         </div>
       </div>
     </Card>

@@ -18,13 +18,13 @@ export default function Dashboard() {
 
       <CashStatus
         salary={data.salary}
-        cashExpenses={stats.cashExpenses}
+        totalExpenses={stats.totalExpenses}
         upcomingDebt={stats.upcomingDebt}
         safeBalance={stats.safeBalance}
       />
 
       <DonutChart
-        cashExpenses={stats.cashExpenses}
+        totalExpenses={stats.totalExpenses}
         upcomingDebt={stats.upcomingDebt}
         safeBalance={stats.safeBalance}
       />
@@ -33,7 +33,7 @@ export default function Dashboard() {
 
       <UpcomingDebts debts={stats.debtsDueThisMonth} />
 
-      <RecentExpenses transactions={stats.recentTransactions} />
+      <RecentExpenses transactions={stats.recentTransactions} debts={data.debts} />
     </div>
   );
 }

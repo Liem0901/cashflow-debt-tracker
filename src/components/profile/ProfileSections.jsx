@@ -178,6 +178,41 @@ export function DebtManagement() {
   );
 }
 
+function BudgetCard({ cat, spent, limit, pct, over, value, onChange, onRemove }) {
+  return (
+    <div className="flex min-w-0 flex-col rounded-xl border border-portfolio-border bg-portfolio-elevated p-3">
+      <div className="mb-1 flex items-start justify-between gap-1">
+        <span className="truncate font-medium text-white">{cat}</span>
+        <button
+          type="button"
+          onClick={() => onRemove(cat)}
+          className="shrink-0 rounded-md border border-portfolio-border px-1.5 py-0.5 text-[10px] text-portfolio-gray transition-colors hover:border-white hover:text-white"
+          aria-label={`Remove ${cat}`}
+        >
+          Remove
+        </button>
+      </div>
+      <p className={`mb-1 text-xs ${over ? 'text-white' : 'text-portfolio-gray'}`}>
+        {formatCurrency(spent)} / {formatCurrency(limit)}
+      </p>
+      <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
+        <div
+          className={`h-full rounded-full transition-all ${over ? 'bg-white' : 'bg-portfolio-gray'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(cat, e.target.value)}
+        className="mt-auto w-full rounded-lg border border-portfolio-border bg-portfolio-muted px-2 py-2 text-sm text-white focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+        placeholder="Limit"
+        min="0"
+      />
+    </div>
+  );
+}
+
 export function BudgetSettings() {
   const { data, updateBudgets, stats } = useApp();
   const [budgets, setBudgets] = useState({ ...data.budgets });
@@ -190,21 +225,24 @@ export function BudgetSettings() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleAddCategory = () => {
-    const name = newCategory.trim();
-    if (!name) return;
-    if (budgets[name] !== undefined) {
-      setNewCategory('');
-      return;
-    }
-    setBudgets({ ...budgets, [name]: 0 });
+  const addCategory = (name) => {
+    const trimmed = name.trim();
+    if (!trimmed || budgets[trimmed] !== undefined) return false;
+    setBudgets((prev) => ({ ...prev, [trimmed]: 0 }));
     setNewCategory('');
+    return true;
+  };
+
+  const handleAddCategory = () => {
+    addCategory(newCategory);
   };
 
   const handleRemoveCategory = (cat) => {
-    const next = { ...budgets };
-    delete next[cat];
-    setBudgets(next);
+    setBudgets((prev) => {
+      const next = { ...prev };
+      delete next[cat];
+      return next;
+    });
   };
 
   const categories = Object.keys(budgets);
@@ -214,9 +252,7 @@ export function BudgetSettings() {
       <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
         Monthly Budgets
       </h2>
-      <p className="mb-3 text-xs text-portfolio-gray">
-        Add your own categories — e.g. Groceries, Petrol, Subscriptions
-      </p>
+      <p className="mb-3 text-xs text-portfolio-gray">Set a monthly limit per category</p>
 
       <div className="mb-4 flex gap-2">
         <input
@@ -225,17 +261,20 @@ export function BudgetSettings() {
           onChange={(e) => setNewCategory(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
           placeholder="New category name"
-          className="flex-1 rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white placeholder:text-portfolio-gray focus:border-white focus:outline-none"
+          className="flex-1 rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white placeholder:text-portfolio-gray focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
         />
         <Button type="button" size="sm" variant="outline" onClick={handleAddCategory}>
           Add
         </Button>
       </div>
 
-      <div className="space-y-3">
-        {categories.length === 0 && (
-          <p className="py-2 text-center text-sm text-portfolio-gray">No budget categories yet</p>
-        )}
+      <div
+        className={`grid grid-cols-2 gap-3 ${
+          categories.length >= 4
+            ? 'max-h-[17.5rem] overflow-y-auto overscroll-contain pr-0.5'
+            : ''
+        }`}
+      >
         {categories.map((cat) => {
           const spent = stats.categorySpending[cat] || 0;
           const limit = Number(budgets[cat]) || 0;
@@ -243,41 +282,28 @@ export function BudgetSettings() {
           const over = spent > limit && limit > 0;
 
           return (
-            <div key={cat} className="rounded-xl border border-portfolio-border bg-portfolio-elevated p-3">
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="font-medium text-white">{cat}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCategory(cat)}
-                  className="shrink-0 rounded-lg px-2 py-0.5 text-xs text-portfolio-gray hover:text-white"
-                  aria-label={`Remove ${cat}`}
-                >
-                  Remove
-                </button>
-              </div>
-              <div className="mb-1 flex justify-between text-sm">
-                <span className="text-portfolio-gray">Spent this month</span>
-                <span className={over ? 'text-white' : 'text-portfolio-gray'}>
-                  {formatCurrency(spent)} / {formatCurrency(limit)}
-                </span>
-              </div>
-              <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
-                <div
-                  className={`h-full rounded-full transition-all ${over ? 'bg-white' : 'bg-portfolio-gray'}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <input
-                type="number"
-                value={budgets[cat]}
-                onChange={(e) => setBudgets({ ...budgets, [cat]: e.target.value })}
-                className="w-full rounded-lg border border-portfolio-border bg-portfolio-muted px-3 py-2 text-sm text-white focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
-                placeholder="Monthly limit (RM)"
-                min="0"
-              />
-            </div>
+            <BudgetCard
+              key={cat}
+              cat={cat}
+              spent={spent}
+              limit={limit}
+              pct={pct}
+              over={over}
+              value={budgets[cat]}
+              onChange={(name, val) => setBudgets((prev) => ({ ...prev, [name]: val }))}
+              onRemove={handleRemoveCategory}
+            />
           );
         })}
+
+        {categories.length === 0 && (
+          <p className="col-span-2 py-6 text-center text-sm text-portfolio-gray">
+            No categories yet — add one above
+          </p>
+        )}
+      </div>
+
+      <div className="mt-3">
         <Button onClick={handleSave} className="w-full" variant={saved ? 'secondary' : 'primary'}>
           {saved ? 'Saved!' : 'Save Budgets'}
         </Button>

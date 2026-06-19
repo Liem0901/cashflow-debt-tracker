@@ -1,6 +1,30 @@
 import { PAYMENT_METHODS } from '../../data/initialData';
 
-export default function PaymentMethodButtons({ selected, onSelect }) {
+export default function PaymentMethodButtons({ selected, onSelect, compact = false }) {
+  if (compact) {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {PAYMENT_METHODS.map(({ id, label }) => {
+          const isSelected = selected === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelect(id)}
+              className={`rounded-xl border-2 py-3 text-sm font-semibold uppercase transition-all ${
+                isSelected
+                  ? 'border-white bg-white text-black'
+                  : 'border-portfolio-border bg-portfolio-elevated text-portfolio-gray hover:border-portfolio-gray'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-3 gap-2">
       {PAYMENT_METHODS.map(({ id, label, icon }) => {

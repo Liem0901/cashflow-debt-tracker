@@ -1,8 +1,10 @@
 import Card from '../ui/Card';
 import CategoryIcon from '../transactions/CategoryIcon';
+import { getPaymentLabel } from '../transactions/PaymentMethodButtons';
+import TransactionStatusBadge from '../transactions/TransactionStatusBadge';
 import { formatCurrency, formatDayLabel } from '../../utils/formatters';
 
-export default function DayDetail({ dateStr, transactions }) {
+export default function DayDetail({ dateStr, transactions, debts = [] }) {
   if (!dateStr) {
     return (
       <Card animate>
@@ -19,6 +21,7 @@ export default function DayDetail({ dateStr, transactions }) {
   const debtTotal = transactions
     .filter((t) => t.type === 'debt')
     .reduce((sum, t) => sum + Number(t.amount), 0);
+  const dayTotal = cashTotal + debtTotal;
 
   return (
     <Card animate>
@@ -30,8 +33,10 @@ export default function DayDetail({ dateStr, transactions }) {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-white">{formatCurrency(cashTotal)}</p>
-          <p className="text-[10px] uppercase text-portfolio-gray">Cash spent</p>
+          <p className="text-lg font-bold text-white">{formatCurrency(dayTotal)}</p>
+          <p className="text-[10px] uppercase text-portfolio-gray">
+            {debtTotal > 0 ? 'Cash + debt' : 'Total spent'}
+          </p>
         </div>
       </div>
 
@@ -54,14 +59,17 @@ export default function DayDetail({ dateStr, transactions }) {
                   <p className="text-sm font-medium text-white">
                     {tx.description || tx.category}
                   </p>
-                  <p className="text-xs text-portfolio-gray">{tx.category}</p>
+                  <p className="text-xs text-portfolio-gray">
+                    {tx.category}
+                    {(tx.type === 'cash' || tx.paymentMethod) && (
+                      <span> · {getPaymentLabel(tx.paymentMethod)}</span>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-semibold text-white">{formatCurrency(tx.amount)}</p>
-                <span className="inline-block rounded-full border border-portfolio-border px-1.5 py-0.5 text-[9px] font-medium uppercase text-portfolio-gray">
-                  {tx.type}
-                </span>
+                <TransactionStatusBadge transaction={tx} debts={debts} />
               </div>
             </div>
           ))}
