@@ -48,11 +48,15 @@
 }
 
 @layer utilities {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .page-padding {
-    @apply px-4 pb-28 pt-4;
+    @apply px-4 pb-28 pt-3;
   }
 }

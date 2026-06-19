@@ -1,28 +1,33 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { STORAGE_KEY, createInitialData } from '../data/initialData';
-import { fetchAppData, saveAppData } from '../services/api';
+import { STORAGE_KEY, createInitialData, getStorageKey } from '../data/initialData';
+import { fetchAppData, saveAppData, setAuthTokenProvider } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { isAuthBypassed } from '../lib/firebase';
 
 const SAVE_DEBOUNCE_MS = 800;
 
-function readLocalStorage() {
+function readLocalStorage(userId) {
   try {
-    const item = window.localStorage.getItem(STORAGE_KEY);
+    const item = window.localStorage.getItem(getStorageKey(userId));
     return item ? JSON.parse(item) : null;
   } catch {
     return null;
   }
 }
 
-function writeLocalStorage(data) {
+function writeLocalStorage(userId, data) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    window.localStorage.setItem(getStorageKey(userId), JSON.stringify(data));
   } catch (error) {
     console.warn('localStorage write failed:', error);
   }
 }
 
 export function useAppData() {
-  const [data, setDataState] = useState(() => readLocalStorage() || createInitialData());
+  const { user, getIdToken, isFirebaseConfigured } = useAuth();
+  const userId = user?.uid || 'default-user';
+
+  const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState('loading');
 
@@ -33,6 +38,14 @@ export function useAppData() {
   useEffect(() => {
     latestDataRef.current = data;
   }, [data]);
+
+  useEffect(() => {
+    if (isFirebaseConfigured && !isAuthBypassed) {
+      setAuthTokenProvider(getIdToken);
+    } else {
+      setAuthTokenProvider(null);
+    }
+  }, [getIdToken, isFirebaseConfigured]);
 
   const persistToCloud = useCallback(async (payload, immediate = false) => {
     if (isHydratingRef.current) return;
@@ -67,20 +80,23 @@ export function useAppData() {
       setDataState((prev) => {
         const next = typeof value === 'function' ? value(prev) : value;
         if (next === prev) return prev;
-        writeLocalStorage(next);
+        writeLocalStorage(userId, next);
         latestDataRef.current = next;
         persistToCloud(next, options.immediate);
         return next;
       });
     },
-    [persistToCloud]
+    [persistToCloud, userId]
   );
 
   useEffect(() => {
     let cancelled = false;
+    isHydratingRef.current = true;
+    setLoading(true);
+    setSyncStatus('loading');
 
     async function hydrate() {
-      const local = readLocalStorage();
+      const local = readLocalStorage(userId);
 
       try {
         const remote = await fetchAppData();
@@ -89,10 +105,10 @@ export function useAppData() {
 
         if (remote.offline) {
           setSyncStatus('local');
-          if (local) setDataState(local);
+          setDataState(local || createInitialData());
         } else if (remote.data) {
           setDataState(remote.data);
-          writeLocalStorage(remote.data);
+          writeLocalStorage(userId, remote.data);
           setSyncStatus('synced');
         } else if (local) {
           setDataState(local);
@@ -101,13 +117,13 @@ export function useAppData() {
         } else {
           const initial = createInitialData();
           setDataState(initial);
-          writeLocalStorage(initial);
+          writeLocalStorage(userId, initial);
           setSyncStatus('synced');
           await saveAppData(initial);
         }
       } catch (error) {
         console.warn('Cloud fetch failed, using localStorage:', error);
-        if (local) setDataState(local);
+        setDataState(local || createInitialData());
         setSyncStatus('local');
       } finally {
         if (!cancelled) {
@@ -123,7 +139,7 @@ export function useAppData() {
       cancelled = true;
       clearTimeout(saveTimerRef.current);
     };
-  }, []);
+  }, [userId]);
 
   return { data, setData, loading, syncStatus };
 }

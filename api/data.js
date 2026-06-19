@@ -1,9 +1,10 @@
 import { getDb, getUserId } from './lib/mongodb.js';
+import { isAuthConfigured, verifyAuthToken } from './lib/auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -16,10 +17,20 @@ export default async function handler(req, res) {
     });
   }
 
+  let userId = null;
+
+  if (isAuthConfigured()) {
+    userId = await verifyAuthToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  } else {
+    userId = getUserId();
+  }
+
   try {
     const db = await getDb();
     const collection = db.collection('users');
-    const userId = getUserId();
 
     if (req.method === 'GET') {
       const doc = await collection.findOne({ userId });

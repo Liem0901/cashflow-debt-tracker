@@ -12,11 +12,6 @@ export default function Dashboard() {
 
   return (
     <div className="page-padding space-y-4 animate-fade-in">
-      <header>
-        <h1 className="text-xl font-bold text-white">Cashflow Tracker</h1>
-        <p className="text-sm text-portfolio-gray">Know what you can safely spend</p>
-      </header>
-
       <Warnings warnings={stats.warnings} />
 
       <SalaryCard salary={data.salary} monthKey={monthKey} />

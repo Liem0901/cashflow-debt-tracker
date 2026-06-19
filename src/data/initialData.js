@@ -1,5 +1,9 @@
 export const STORAGE_KEY = 'cashflow_app_data';
 
+export function getStorageKey(userId = 'default-user') {
+  return `${STORAGE_KEY}_${userId}`;
+}
+
 export const CATEGORY_CONFIG = {
   Food: 'bi-cup-hot',
   Transport: 'bi-car-front',
@@ -30,6 +34,10 @@ export const PAYMENT_METHODS = [
   { id: 'qr', label: 'QR', icon: 'bi-qr-code' },
 ];
 
+export function createInitialBudgets() {
+  return Object.fromEntries(BUDGET_CATEGORIES.map((cat) => [cat, 0]));
+}
+
 export function createInitialData() {
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -38,12 +46,7 @@ export function createInitialData() {
     salary: 0,
     paydayDate: 1,
     currentMonth,
-    budgets: {
-      Food: 0,
-      Transport: 0,
-      Entertainment: 0,
-      Shopping: 0,
-    },
+    budgets: createInitialBudgets(),
     transactions: [],
     debts: [],
     archivedMonths: [],

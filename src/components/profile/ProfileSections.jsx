@@ -181,6 +181,7 @@ export function DebtManagement() {
 export function BudgetSettings() {
   const { data, updateBudgets, stats } = useApp();
   const [budgets, setBudgets] = useState({ ...data.budgets });
+  const [newCategory, setNewCategory] = useState('');
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -189,27 +190,78 @@ export function BudgetSettings() {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleAddCategory = () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    if (budgets[name] !== undefined) {
+      setNewCategory('');
+      return;
+    }
+    setBudgets({ ...budgets, [name]: 0 });
+    setNewCategory('');
+  };
+
+  const handleRemoveCategory = (cat) => {
+    const next = { ...budgets };
+    delete next[cat];
+    setBudgets(next);
+  };
+
+  const categories = Object.keys(budgets);
+
   return (
     <Card>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
         Monthly Budgets
       </h2>
+      <p className="mb-3 text-xs text-portfolio-gray">
+        Add your own categories — e.g. Groceries, Petrol, Subscriptions
+      </p>
+
+      <div className="mb-4 flex gap-2">
+        <input
+          type="text"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+          placeholder="New category name"
+          className="flex-1 rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white placeholder:text-portfolio-gray focus:border-white focus:outline-none"
+        />
+        <Button type="button" size="sm" variant="outline" onClick={handleAddCategory}>
+          Add
+        </Button>
+      </div>
+
       <div className="space-y-3">
-        {Object.keys(budgets).map((cat) => {
+        {categories.length === 0 && (
+          <p className="py-2 text-center text-sm text-portfolio-gray">No budget categories yet</p>
+        )}
+        {categories.map((cat) => {
           const spent = stats.categorySpending[cat] || 0;
           const limit = Number(budgets[cat]) || 0;
           const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0;
           const over = spent > limit && limit > 0;
 
           return (
-            <div key={cat}>
-              <div className="mb-1 flex justify-between text-sm">
+            <div key={cat} className="rounded-xl border border-portfolio-border bg-portfolio-elevated p-3">
+              <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="font-medium text-white">{cat}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCategory(cat)}
+                  className="shrink-0 rounded-lg px-2 py-0.5 text-xs text-portfolio-gray hover:text-white"
+                  aria-label={`Remove ${cat}`}
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="mb-1 flex justify-between text-sm">
+                <span className="text-portfolio-gray">Spent this month</span>
                 <span className={over ? 'text-white' : 'text-portfolio-gray'}>
                   {formatCurrency(spent)} / {formatCurrency(limit)}
                 </span>
               </div>
-              <div className="mb-1.5 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
+              <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
                 <div
                   className={`h-full rounded-full transition-all ${over ? 'bg-white' : 'bg-portfolio-gray'}`}
                   style={{ width: `${pct}%` }}
@@ -219,8 +271,9 @@ export function BudgetSettings() {
                 type="number"
                 value={budgets[cat]}
                 onChange={(e) => setBudgets({ ...budgets, [cat]: e.target.value })}
-                className="w-full rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white"
-                placeholder="Budget limit"
+                className="w-full rounded-lg border border-portfolio-border bg-portfolio-muted px-3 py-2 text-sm text-white focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+                placeholder="Monthly limit (RM)"
+                min="0"
               />
             </div>
           );

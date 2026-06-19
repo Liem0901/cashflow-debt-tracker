@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import AppLogo from './AppLogo';
 
 function HomeIcon({ active }) {
   return (
@@ -95,11 +96,14 @@ function CenterAddButton() {
 export default function Layout() {
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-black">
+      <div className="app-top-bar px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
+        <AppLogo />
+      </div>
       <main className="min-h-screen">
         <Outlet />
       </main>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-lg border-t border-portfolio-border bg-portfolio-card shadow-nav safe-area-bottom">
-        <div className="flex items-end justify-around px-1 pb-2 pt-1">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-lg border-t border-portfolio-border bg-portfolio-card shadow-nav">
+        <div className="flex items-end justify-around px-1 pb-[calc(env(safe-area-inset-bottom,0px)+0.375rem)] pt-1">
           <NavTab to="/" label="Home" icon={HomeIcon} end />
           <NavTab to="/calendar" label="Calendar" icon={CalendarIcon} />
           <CenterAddButton />
