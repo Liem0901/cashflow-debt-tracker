@@ -32,18 +32,37 @@
     @apply font-sans outline-none;
   }
 
-  input[type='date'] {
-    color-scheme: dark;
-    min-width: 0;
-    max-width: 100%;
+  input:not([type='date']):not([type='time']):not([type='datetime-local']):not([type='month']):not([type='week']),
+  select,
+  textarea {
+    display: block;
   }
 
-  input[type='date']::-webkit-date-and-time-value {
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'],
+  input[type='week'] {
+    color-scheme: dark;
+    overflow: hidden;
+  }
+
+  input.date-input::-webkit-datetime-edit,
+  input.date-input::-webkit-datetime-edit-fields-wrapper,
+  input.date-input::-webkit-datetime-edit-text,
+  input.date-input::-webkit-datetime-edit-day-field,
+  input.date-input::-webkit-datetime-edit-month-field,
+  input.date-input::-webkit-datetime-edit-year-field {
+    padding: 0;
+  }
+
+  input.date-input::-webkit-date-and-time-value,
+  input.date-input::-webkit-datetime-edit {
     min-width: 0;
     text-align: left;
   }
 
-  input[type='date']::-webkit-calendar-picker-indicator {
+  input.date-input::-webkit-calendar-picker-indicator {
     margin-left: 0;
     padding: 0;
   }
