@@ -92,6 +92,35 @@ export function getDebtsDueThisMonth(debts, monthKey) {
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
 
+/** Debts due this month plus unlinked unpaid expenses (same rules as getUpcomingDebtTotal). */
+export function getUpcomingItemsThisMonth(debts, transactions, monthKey) {
+  const debtItems = getDebtsDueThisMonth(debts, monthKey).map((d) => ({
+    id: d.id,
+    category: d.category || 'Other',
+    dueDate: d.dueDate,
+    amount: Number(d.amount),
+    remaining: Number(d.remaining),
+  }));
+
+  const unpaidExpenseItems = transactions
+    .filter((t) => {
+      if (t.type === 'income' || t.debtId) return false;
+      if (getTransactionPaidStatus(t, debts) !== 'unpaid') return false;
+      return isSameMonth(getTransactionCalendarDate(t, debts), monthKey);
+    })
+    .map((t) => ({
+      id: `unpaid-${t.id}`,
+      category: t.category || 'Other',
+      dueDate: getTransactionCalendarDate(t, debts),
+      amount: Number(t.amount),
+      remaining: Number(t.amount),
+    }));
+
+  return [...debtItems, ...unpaidExpenseItems].sort(
+    (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
+  );
+}
+
 export function getRecentTransactions(transactions, limit = 5) {
   return [...transactions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -152,7 +181,11 @@ export function getDashboardStats(data, monthKey) {
   const safeBalance = getSafeBalance(salary, otherIncome, totalExpenses, upcomingDebt);
   const totalActiveDebt = getTotalActiveDebt(data.debts);
   const categorySpending = getCategorySpending(data.transactions, monthKey);
-  const debtsDueThisMonth = getDebtsDueThisMonth(data.debts, monthKey);
+  const debtsDueThisMonth = getUpcomingItemsThisMonth(
+    data.debts,
+    data.transactions,
+    monthKey
+  );
   const recentTransactions = getRecentTransactions(data.transactions);
   const warnings = getWarnings({
     salary: cashAvailable,

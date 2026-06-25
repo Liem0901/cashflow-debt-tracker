@@ -8,7 +8,7 @@ export default function UpcomingDebts({ debts }) {
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
           Upcoming Debt
         </h2>
-        <p className="py-4 text-center text-sm text-portfolio-gray">No debts due this month</p>
+        <p className="py-4 text-center text-sm text-portfolio-gray">No upcoming payments this month</p>
       </Card>
     );
   }
