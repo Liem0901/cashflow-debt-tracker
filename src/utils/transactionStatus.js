@@ -1,13 +1,13 @@
 export function getTransactionPaidStatus(tx, debts = []) {
   if (tx.type === 'income') return null;
-  if (tx.type === 'cash') return 'paid';
+  if (tx.type === 'cash') return tx.paidStatus === 'unpaid' ? 'unpaid' : 'paid';
 
   if (tx.debtId) {
     const debt = debts.find((d) => d.id === tx.debtId);
     return debt?.status === 'paid' ? 'paid' : 'unpaid';
   }
 
-  return 'unpaid';
+  return tx.paidStatus === 'paid' ? 'paid' : 'unpaid';
 }
 
 export function getTransactionStatusBadge(status) {

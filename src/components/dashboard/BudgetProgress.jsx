@@ -14,13 +14,18 @@ function BudgetRow({ cat, spent, limit, pct, over }) {
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           {CATEGORIES.includes(cat) && (
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted">
               <CategoryIcon category={cat} className="text-base" />
             </span>
           )}
-          <p className="font-medium text-white">{cat}</p>
+          <div className="min-w-0 flex-1">
+            <p className="break-words font-medium leading-snug text-white">{cat}</p>
+            <p className={`mt-0.5 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
+              {formatCurrency(spent)} / {formatCurrency(limit)}
+            </p>
+          </div>
         </div>
         {over ? (
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-metric-debt">
@@ -30,9 +35,6 @@ function BudgetRow({ cat, spent, limit, pct, over }) {
           <span className="shrink-0 text-[10px] text-metric-cash">{Math.round(pct)}%</span>
         ) : null}
       </div>
-      <p className={`mt-0.5 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
-        {formatCurrency(spent)} / {formatCurrency(limit)}
-      </p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
         <div
           className={`h-full rounded-full transition-all ${

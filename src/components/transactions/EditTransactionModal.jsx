@@ -90,7 +90,7 @@ export default function EditTransactionModal({ transaction, onClose }) {
     const numAmount = centsToAmount(amountCents);
     if (!numAmount || numAmount <= 0) return;
 
-    updateTransaction(transaction.id, {
+    const updates = {
       amount: numAmount,
       category,
       description,
@@ -100,15 +100,21 @@ export default function EditTransactionModal({ transaction, onClose }) {
         : paymentMethod
           ? { paymentMethod }
           : {}),
-    });
+    };
 
-    if (hasLinkedDebt) {
-      if (paidStatus === 'paid') {
-        markDebtPaid(transaction.debtId);
+    if (!isIncome) {
+      if (hasLinkedDebt) {
+        if (paidStatus === 'paid') {
+          markDebtPaid(transaction.debtId);
+        } else {
+          markDebtUnpaid(transaction.debtId);
+        }
       } else {
-        markDebtUnpaid(transaction.debtId);
+        updates.paidStatus = paidStatus;
       }
     }
+
+    updateTransaction(transaction.id, updates);
 
     onClose();
   };
@@ -157,28 +163,11 @@ export default function EditTransactionModal({ transaction, onClose }) {
             </div>
           </div>
 
-          {isCash ? (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">
-                Payment method
-              </label>
-              <PaymentMethodButtons
-                compact
-                selected={paymentMethod}
-                onSelect={setPaymentMethod}
-              />
-            </div>
-          ) : !isIncome ? (
+          {!isIncome && (
             <>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">Status</label>
-                {hasLinkedDebt ? (
-                  <PaymentStatusButtons selected={paidStatus} onSelect={setPaidStatus} />
-                ) : (
-                  <p className="text-xs text-portfolio-gray">
-                    No linked debt record — status cannot be changed.
-                  </p>
-                )}
+                <PaymentStatusButtons selected={paidStatus} onSelect={setPaidStatus} />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">
@@ -191,7 +180,7 @@ export default function EditTransactionModal({ transaction, onClose }) {
                 />
               </div>
             </>
-          ) : null}
+          )}
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">

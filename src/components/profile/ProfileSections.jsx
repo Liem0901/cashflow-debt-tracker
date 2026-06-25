@@ -138,33 +138,41 @@ export function DebtManagement() {
   );
 }
 
-function BudgetCard({ cat, spent, limit, pct, over, value, onChange, onRemove, showIcon, canRemove }) {
+function BudgetCard({
+  cat,
+  spent,
+  limit,
+  pct,
+  over,
+  value,
+  onChange,
+  onRemove,
+  onActivate,
+  showIcon,
+  canRemove,
+  isActive,
+}) {
   return (
-    <div className="flex min-w-0 flex-col rounded-xl border border-portfolio-border bg-portfolio-elevated p-3">
-      <div className="mb-1 flex items-start justify-between gap-1">
-        <div className="flex min-w-0 items-center gap-1.5">
-          {showIcon && (
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted">
-              <CategoryIcon category={cat} className="text-sm" />
-            </span>
-          )}
-          <span className="truncate font-medium text-white">{cat}</span>
+    <div
+      className="relative flex min-w-0 flex-col rounded-xl border border-portfolio-border bg-portfolio-elevated p-2.5"
+      onClick={() => {
+        if (!isActive) onActivate(cat);
+      }}
+    >
+      <div className="mb-1.5 flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-medium leading-snug text-white">{cat}</p>
+          <p className={`mt-0.5 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
+            {formatCurrency(spent)} / {formatCurrency(limit)}
+          </p>
         </div>
-        {canRemove && (
-          <button
-            type="button"
-            onClick={() => onRemove(cat)}
-            className="shrink-0 rounded-md border border-portfolio-border px-1.5 py-0.5 text-[10px] text-portfolio-gray transition-colors hover:border-white hover:text-white"
-            aria-label={`Remove ${cat}`}
-          >
-            Remove
-          </button>
+        {showIcon && (
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-portfolio-muted">
+            <CategoryIcon category={cat} className="text-xs" />
+          </span>
         )}
       </div>
-      <p className={`mb-1 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
-        {formatCurrency(spent)} / {formatCurrency(limit)}
-      </p>
-      <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
+      <div className="mb-1.5 h-1 overflow-hidden rounded-full bg-portfolio-muted">
         <div
           className={`h-full rounded-full transition-all ${
             over ? 'bg-metric-debt' : 'bg-metric-cash'
@@ -175,11 +183,35 @@ function BudgetCard({ cat, spent, limit, pct, over, value, onChange, onRemove, s
       <input
         type="number"
         value={value}
+        onClick={(e) => e.stopPropagation()}
+        onFocus={() => onActivate(null)}
         onChange={(e) => onChange(cat, e.target.value)}
-        className="mt-auto w-full rounded-lg border border-portfolio-border bg-portfolio-muted px-2 py-2 text-sm text-white focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+        className="mt-auto w-full rounded-lg border border-portfolio-border bg-portfolio-muted px-2 py-1.5 text-sm text-white focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
         placeholder="Limit"
         min="0"
       />
+
+      {canRemove && isActive && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/55 backdrop-blur-[1px] animate-fade-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            onActivate(null);
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(cat);
+            }}
+            className="flex items-center gap-1.5 rounded-xl border border-metric-debt/50 bg-metric-debt/15 px-3 py-2 text-sm font-semibold text-metric-debt transition-colors hover:bg-metric-debt/25 hover:text-red-400"
+          >
+            <i className="bi bi-trash" aria-hidden="true" />
+            Remove
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,6 +221,7 @@ export function BudgetSettings() {
   const [budgets, setBudgets] = useState({ ...data.budgets });
   const [newCategory, setNewCategory] = useState('');
   const [saved, setSaved] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
 
   useEffect(() => {
     setBudgets({ ...data.budgets });
@@ -219,6 +252,7 @@ export function BudgetSettings() {
   };
 
   const handleRemoveCategory = (cat) => {
+    setActiveCategory((prev) => (prev === cat ? null : prev));
     setBudgets((prev) => {
       const next = { ...prev };
       delete next[cat];
@@ -289,6 +323,8 @@ export function BudgetSettings() {
               value={budgets[cat] ?? 0}
               showIcon={CATEGORIES.includes(cat)}
               canRemove
+              isActive={activeCategory === cat}
+              onActivate={(name) => setActiveCategory(name)}
               onChange={(name, val) => setBudgets((prev) => ({ ...prev, [name]: val }))}
               onRemove={handleRemoveCategory}
             />

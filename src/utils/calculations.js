@@ -13,16 +13,26 @@ export function getTotalExpenses(transactions, monthKey, debts = []) {
     .filter((t) => {
       if (t.type === 'income') return false;
       if (!isSameMonth(getTransactionCalendarDate(t, debts), monthKey)) return false;
-      if (t.type === 'debt' && getTransactionPaidStatus(t, debts) === 'unpaid') return false;
+      if (getTransactionPaidStatus(t, debts) === 'unpaid') return false;
       return true;
     })
     .reduce((sum, t) => sum + Number(t.amount), 0);
 }
 
-export function getUpcomingDebtTotal(debts, monthKey) {
-  return debts
+export function getUpcomingDebtTotal(debts, monthKey, transactions = []) {
+  const fromDebts = debts
     .filter((d) => d.status !== 'paid' && isSameMonth(d.dueDate, monthKey))
     .reduce((sum, d) => sum + Number(d.remaining), 0);
+
+  const fromUnpaidExpenses = transactions
+    .filter((t) => {
+      if (t.type === 'income' || t.debtId) return false;
+      if (getTransactionPaidStatus(t, debts) !== 'unpaid') return false;
+      return isSameMonth(getTransactionCalendarDate(t, debts), monthKey);
+    })
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  return fromDebts + fromUnpaidExpenses;
 }
 
 export function getTotalActiveDebt(debts) {
@@ -138,7 +148,7 @@ export function getDashboardStats(data, monthKey) {
   const cashAvailable = getCashAvailable(salary, otherIncome);
   const totalExpenses = getTotalExpenses(data.transactions, monthKey, data.debts);
   const cashExpenses = getCashExpenses(data.transactions, monthKey);
-  const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey);
+  const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey, data.transactions);
   const safeBalance = getSafeBalance(salary, otherIncome, totalExpenses, upcomingDebt);
   const totalActiveDebt = getTotalActiveDebt(data.debts);
   const categorySpending = getCategorySpending(data.transactions, monthKey);
