@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { CATEGORIES } from '../../data/initialData';
+import { getTransactionCategories, INCOME_SOURCES } from '../../data/initialData';
 import { amountToCents, centsToAmount } from '../../utils/amountInput';
 import { getTransactionCalendarDate } from '../../utils/calculations';
 import { getTransactionPaidStatus } from '../../utils/transactionStatus';
@@ -55,6 +55,10 @@ export default function EditTransactionModal({ transaction, onClose }) {
     markDebtPaid,
     markDebtUnpaid,
   } = useApp();
+  const categories = useMemo(
+    () => getTransactionCategories(data.budgets),
+    [data.budgets]
+  );
   const [amountCents, setAmountCents] = useState(0);
   const [category, setCategory] = useState('Food');
   const [description, setDescription] = useState('');
@@ -77,7 +81,9 @@ export default function EditTransactionModal({ transaction, onClose }) {
   if (!transaction) return null;
 
   const isCash = transaction.type === 'cash';
-  const hasLinkedDebt = !isCash && Boolean(transaction.debtId);
+  const isIncome = transaction.type === 'income';
+  const hasLinkedDebt = !isCash && !isIncome && Boolean(transaction.debtId);
+  const pickerCategories = isIncome ? INCOME_SOURCES : categories;
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -117,22 +123,26 @@ export default function EditTransactionModal({ transaction, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
       <div
-        className="w-full max-w-lg rounded-2xl border border-portfolio-border bg-portfolio-card p-4 shadow-card animate-slide-up"
+        className="flex max-h-[min(90dvh,100%)] w-full max-w-lg min-w-0 flex-col overflow-hidden rounded-2xl border border-portfolio-border bg-portfolio-card shadow-card animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Edit expense</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-portfolio-gray hover:text-white"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+        <div className="shrink-0 border-b border-portfolio-border p-4 pb-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">
+              {isIncome ? 'Edit income' : 'Edit expense'}
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-2 py-1 text-portfolio-gray hover:text-white"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-3">
+        <form onSubmit={handleSave} className="min-w-0 space-y-3 overflow-y-auto overflow-x-hidden p-4 pt-3">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">Amount</label>
             <div className="relative">
@@ -158,7 +168,7 @@ export default function EditTransactionModal({ transaction, onClose }) {
                 onSelect={setPaymentMethod}
               />
             </div>
-          ) : (
+          ) : !isIncome ? (
             <>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">Status</label>
@@ -181,14 +191,17 @@ export default function EditTransactionModal({ transaction, onClose }) {
                 />
               </div>
             </>
-          )}
+          ) : null}
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">Category</label>
+            <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">
+              {isIncome ? 'Source' : 'Category'}
+            </label>
             <CategoryButtons
-              categories={CATEGORIES}
+              categories={pickerCategories}
               selected={category}
               onSelect={setCategory}
+              compact
             />
           </div>
 

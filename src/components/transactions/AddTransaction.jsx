@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { CATEGORIES, DEBT_PROVIDERS } from '../../data/initialData';
-import { todayISO } from '../../utils/formatters';
+import {
+  getTransactionCategories,
+  DEBT_PROVIDERS,
+  INCOME_SOURCES,
+} from '../../data/initialData';
 import { amountToCents, centsToAmount } from '../../utils/amountInput';
 import CategoryButtons from './CategoryButtons';
 import PaymentMethodButtons from './PaymentMethodButtons';
@@ -10,20 +13,42 @@ import Button from '../ui/Button';
 import Input, { Select } from '../ui/Input';
 import AmountInput from '../ui/AmountInput';
 
+const MODES = [
+  { id: 'cash', label: 'Expense' },
+  { id: 'income', label: 'Income' },
+  { id: 'debt', label: 'Debt' },
+];
+
 export default function AddTransaction() {
   const navigate = useNavigate();
-  const { addCashTransaction, addDebtTransaction } = useApp();
+  const {
+    addCashTransaction,
+    addDebtTransaction,
+    addIncomeTransaction,
+    data,
+    selectedCalendarDate,
+  } = useApp();
+  const categories = useMemo(
+    () => getTransactionCategories(data.budgets),
+    [data.budgets]
+  );
 
   const [mode, setMode] = useState('cash');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [amountCents, setAmountCents] = useState(0);
   const [category, setCategory] = useState('Food');
+  const [incomeSource, setIncomeSource] = useState(INCOME_SOURCES[0]);
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(selectedCalendarDate);
   const [provider, setProvider] = useState(DEBT_PROVIDERS[0]);
-  const [dueDate, setDueDate] = useState(todayISO());
+  const [dueDate, setDueDate] = useState(selectedCalendarDate);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setDate(selectedCalendarDate);
+    setDueDate(selectedCalendarDate);
+  }, [selectedCalendarDate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -34,6 +59,13 @@ export default function AddTransaction() {
 
     if (mode === 'cash') {
       addCashTransaction({ amount: numAmount, category, description, date, paymentMethod });
+    } else if (mode === 'income') {
+      addIncomeTransaction({
+        amount: numAmount,
+        source: incomeSource,
+        description,
+        date,
+      });
     } else {
       addDebtTransaction({
         amount: numAmount,
@@ -56,32 +88,26 @@ export default function AddTransaction() {
   };
 
   const quickAmounts = [10, 15, 20, 50, 100];
+  const submitLabel =
+    mode === 'cash' ? 'Add Expense' : mode === 'income' ? 'Add Income' : 'Add Debt';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex rounded-xl bg-portfolio-elevated p-1">
-        <button
-          type="button"
-          onClick={() => setMode('cash')}
-          className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
-            mode === 'cash'
-              ? 'bg-white text-black shadow-sm'
-              : 'text-portfolio-gray'
-          }`}
-        >
-          Cash Expense
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('debt')}
-          className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
-            mode === 'debt'
-              ? 'bg-white text-black shadow-sm'
-              : 'text-portfolio-gray'
-          }`}
-        >
-          Pay Later / Debt
-        </button>
+        {MODES.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMode(id)}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
+              mode === id
+                ? 'bg-white text-black shadow-sm'
+                : 'text-portfolio-gray'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div>
@@ -118,14 +144,25 @@ export default function AddTransaction() {
         </div>
       )}
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-portfolio-gray">Category</label>
-        <CategoryButtons
-          categories={CATEGORIES}
-          selected={category}
-          onSelect={setCategory}
-        />
-      </div>
+      {mode === 'income' ? (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-portfolio-gray">Source</label>
+          <CategoryButtons
+            categories={INCOME_SOURCES}
+            selected={incomeSource}
+            onSelect={setIncomeSource}
+          />
+        </div>
+      ) : (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-portfolio-gray">Category</label>
+          <CategoryButtons
+            categories={categories}
+            selected={category}
+            onSelect={setCategory}
+          />
+        </div>
+      )}
 
       {mode === 'debt' && (
         <>
@@ -149,7 +186,7 @@ export default function AddTransaction() {
         </>
       )}
 
-      {mode === 'cash' && (
+      {mode !== 'debt' && (
         <Input
           label="Date"
           type="date"
@@ -162,10 +199,22 @@ export default function AddTransaction() {
       <Input
         label="Description (optional)"
         type="text"
-        placeholder={mode === 'cash' ? 'e.g. Lunch' : 'e.g. Shopee order'}
+        placeholder={
+          mode === 'cash'
+            ? 'e.g. Lunch'
+            : mode === 'income'
+              ? 'e.g. Bank transfer'
+              : 'e.g. Shopee order'
+        }
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
+
+      {mode === 'income' && (
+        <p className="rounded-lg border border-metric-cash/30 bg-metric-cash/5 px-3 py-2 text-xs text-portfolio-gray">
+          Adds to your cash available this month (transfers, side gigs, etc.).
+        </p>
+      )}
 
       <Button
         type="submit"
@@ -173,7 +222,7 @@ export default function AddTransaction() {
         className="w-full"
         disabled={submitting || amountCents === 0}
       >
-        {success ? '✓ Saved!' : mode === 'cash' ? 'Add Expense' : 'Add Debt'}
+        {success ? '✓ Saved!' : submitLabel}
       </Button>
     </form>
   );

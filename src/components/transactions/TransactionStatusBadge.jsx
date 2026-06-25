@@ -2,6 +2,8 @@ import { getTransactionPaidStatus, getTransactionStatusBadge } from '../../utils
 
 export default function TransactionStatusBadge({ transaction, debts = [] }) {
   const status = getTransactionPaidStatus(transaction, debts);
+  if (!status) return null;
+
   const badge = getTransactionStatusBadge(status);
 
   return (

@@ -1,8 +1,4 @@
-import {
-  SalarySettings,
-  BudgetSettings,
-  DataManagement,
-} from '../components/profile/ProfileSections';
+import { BudgetSettings, DataManagement } from '../components/profile/ProfileSections';
 import AccountSettings from '../components/profile/AccountSettings';
 import SyncStatus from '../components/profile/SyncStatus';
 import { useApp } from '../context/AppContext';
@@ -20,7 +16,6 @@ export default function Profile() {
       <SyncStatus status={syncStatus} />
 
       <AccountSettings />
-      <SalarySettings />
       <BudgetSettings />
       <DataManagement />
     </div>

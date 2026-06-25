@@ -23,7 +23,9 @@ export default function TransactionList({
   return (
     <>
       <div className="space-y-2">
-        {transactions.map((tx) => (
+        {transactions.map((tx) => {
+          const isIncome = tx.type === 'income';
+          return (
           <button
             key={tx.id}
             type="button"
@@ -33,7 +35,11 @@ export default function TransactionList({
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted text-lg">
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg ${
+                  isIncome ? 'bg-metric-cash/15 text-metric-cash' : 'bg-portfolio-muted'
+                }`}
+              >
                 <CategoryIcon category={tx.category} />
               </span>
               <div className="min-w-0">
@@ -49,11 +55,19 @@ export default function TransactionList({
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-amount font-semibold text-white">{formatCurrency(tx.amount)}</p>
+              <p
+                className={`text-amount font-semibold ${
+                  isIncome ? 'text-metric-cash' : 'text-white'
+                }`}
+              >
+                {isIncome ? '+' : ''}
+                {formatCurrency(tx.amount)}
+              </p>
               <TransactionStatusBadge transaction={tx} debts={debts} />
             </div>
           </button>
-        ))}
+        );
+        })}
       </div>
 
       {editable && (

@@ -1,11 +1,16 @@
 import Card from '../ui/Card';
 import { formatCurrency } from '../../utils/formatters';
 
-export default function CashStatus({ salary, totalExpenses, upcomingDebt, safeBalance }) {
+export default function CashStatus({
+  cashAvailable,
+  totalExpenses,
+  upcomingDebt,
+  safeBalance,
+}) {
   const items = [
-    { label: 'Cash Available', value: salary, color: 'text-metric-cash' },
+    { label: 'Cash Available', value: cashAvailable, color: 'text-metric-cash' },
     { label: 'Total Expenses', value: totalExpenses, color: 'text-metric-expense' },
-    { label: 'Upcoming Debt', value: upcomingDebt, color: 'text-metric-debt' },
+    { label: 'Upcoming', value: upcomingDebt, color: 'text-metric-debt' },
   ];
 
   return (
@@ -28,7 +33,7 @@ export default function CashStatus({ salary, totalExpenses, upcomingDebt, safeBa
             </span>
           </div>
           <p className="mt-1 text-xs text-portfolio-muted">
-            Salary − Total Expenses − Upcoming Debt
+            Cash Available − Total Expenses − Upcoming
           </p>
         </div>
       </div>

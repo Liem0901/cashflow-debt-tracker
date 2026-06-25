@@ -1,4 +1,4 @@
-const MAX_CENTS = 99_999_999;
+const MAX_CENTS = 999_999_999_99;
 
 export function centsToDisplay(cents) {
   return (Math.max(0, cents) / 100).toFixed(2);

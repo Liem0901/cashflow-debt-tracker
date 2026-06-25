@@ -1,4 +1,8 @@
-import { getCategoryIcon } from '../../data/initialData';
+import { getCategoryIcon, getIncomeSourceIcon, INCOME_SOURCE_CONFIG } from '../../data/initialData';
+
+function getIconForLabel(label) {
+  return INCOME_SOURCE_CONFIG[label] ? getIncomeSourceIcon(label) : getCategoryIcon(label);
+}
 
 export default function CategoryButtons({ categories, selected, onSelect, compact = false }) {
   if (compact) {
@@ -40,7 +44,7 @@ export default function CategoryButtons({ categories, selected, onSelect, compac
                 : 'border-portfolio-border bg-portfolio-elevated text-portfolio-gray hover:border-portfolio-gray'
             }`}
           >
-            <i className={`bi ${getCategoryIcon(cat)} text-2xl`} aria-hidden="true" />
+            <i className={`bi ${getIconForLabel(cat)} text-2xl`} aria-hidden="true" />
             <span className="text-xs font-medium">{cat}</span>
           </button>
         );

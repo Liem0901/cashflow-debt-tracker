@@ -1,7 +1,5 @@
 import Card from '../ui/Card';
-import CategoryIcon from '../transactions/CategoryIcon';
-import { getPaymentLabel } from '../transactions/PaymentMethodButtons';
-import TransactionStatusBadge from '../transactions/TransactionStatusBadge';
+import TransactionList from '../transactions/TransactionList';
 import { formatCurrency, formatDayLabel } from '../../utils/formatters';
 
 export default function DayDetail({ dateStr, transactions, debts = [] }) {
@@ -21,6 +19,9 @@ export default function DayDetail({ dateStr, transactions, debts = [] }) {
   const debtTotal = transactions
     .filter((t) => t.type === 'debt')
     .reduce((sum, t) => sum + Number(t.amount), 0);
+  const incomeTotal = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
   const dayTotal = cashTotal + debtTotal;
 
   return (
@@ -35,7 +36,13 @@ export default function DayDetail({ dateStr, transactions, debts = [] }) {
         <div className="text-right">
           <p className="text-lg font-bold text-white">{formatCurrency(dayTotal)}</p>
           <p className="text-[10px] uppercase text-portfolio-gray">
-            {debtTotal > 0 ? 'Cash + debt' : 'Total spent'}
+            {incomeTotal > 0
+              ? debtTotal > 0
+                ? 'Spent + income'
+                : 'Spent'
+              : debtTotal > 0
+                ? 'Cash + debt'
+                : 'Total spent'}
           </p>
         </div>
       </div>
@@ -45,40 +52,23 @@ export default function DayDetail({ dateStr, transactions, debts = [] }) {
           No expenses on this day
         </p>
       ) : (
-        <div className="space-y-2">
-          {transactions.map((tx) => (
-            <div
-              key={tx.id}
-              className="flex items-center justify-between rounded-xl bg-portfolio-elevated px-3 py-2.5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-portfolio-muted text-base">
-                  <CategoryIcon category={tx.category} className="text-base" />
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    {tx.description || tx.category}
-                  </p>
-                  <p className="text-xs text-portfolio-gray">
-                    {tx.category}
-                    {(tx.type === 'cash' || tx.paymentMethod) && (
-                      <span> · {getPaymentLabel(tx.paymentMethod)}</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-white">{formatCurrency(tx.amount)}</p>
-                <TransactionStatusBadge transaction={tx} debts={debts} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <TransactionList
+          transactions={transactions}
+          debts={debts}
+          editable
+          emptyMessage="No expenses on this day"
+        />
       )}
 
       {debtTotal > 0 && (
         <p className="mt-3 text-xs text-portfolio-light">
           + {formatCurrency(debtTotal)} in pay-later / debt recorded this day
+        </p>
+      )}
+
+      {incomeTotal > 0 && (
+        <p className="mt-3 text-xs text-metric-cash">
+          + {formatCurrency(incomeTotal)} income received this day
         </p>
       )}
     </Card>

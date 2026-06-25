@@ -69,6 +69,14 @@ export function shiftMonthKey(monthKey, delta) {
   return getCurrentMonthKey(d);
 }
 
+/** Keep the same day-of-month when switching months (clamp to last day if needed). */
+export function alignDateToMonth(dateStr, monthKey) {
+  const { year, month } = parseMonthKey(monthKey);
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const day = Math.min(Number(dateStr.split('-')[2]) || 1, lastDay);
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export function getCalendarDays(monthKey) {
   const { year, month } = parseMonthKey(monthKey);
   const firstDay = new Date(year, month, 1);

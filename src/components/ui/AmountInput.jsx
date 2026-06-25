@@ -12,9 +12,12 @@ export default function AmountInput({
   className,
   autoFocus,
   onValueChange,
+  sizeToContent = false,
+  minWidthCh = 4,
 }) {
   const display = centsToDisplay(cents);
   const handledRef = useRef(false);
+  const contentWidth = `${Math.max(display.length, minWidthCh)}ch`;
 
   const applyDigit = useCallback(
     (digit) => {
@@ -90,6 +93,7 @@ export default function AmountInput({
       onPaste={handlePaste}
       onChange={() => {}}
       className={`amount-input ${className ?? ''}`}
+      style={sizeToContent ? { width: contentWidth } : undefined}
       autoFocus={autoFocus}
       aria-label="Amount"
     />

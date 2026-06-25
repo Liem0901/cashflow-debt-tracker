@@ -1,13 +1,13 @@
-export default function Input({ label, error, className = '', ...props }) {
+export default function Input({ label, error, className = '', inputClassName = '', ...props }) {
   return (
-    <div className={className}>
+    <div className={`min-w-0 ${className}`}>
       {label && (
         <label className="mb-1.5 block text-sm font-medium text-portfolio-gray">
           {label}
         </label>
       )}
       <input
-        className={`w-full rounded-xl border border-portfolio-border bg-portfolio-elevated px-4 py-3 text-portfolio-white transition-colors placeholder:text-portfolio-muted focus:border-portfolio-white focus:ring-2 focus:ring-white/10 ${error ? 'border-portfolio-light' : ''}`}
+        className={`box-border w-full min-w-0 max-w-full rounded-xl border border-portfolio-border bg-portfolio-elevated px-4 py-3 text-portfolio-white transition-colors placeholder:text-portfolio-muted focus:border-portfolio-white focus:ring-2 focus:ring-white/10 ${error ? 'border-portfolio-light' : ''} ${inputClassName}`}
         {...props}
       />
       {error && <p className="mt-1 text-xs text-portfolio-light">{error}</p>}

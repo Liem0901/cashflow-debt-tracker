@@ -15,8 +15,49 @@ export const CATEGORY_CONFIG = {
 
 export const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Entertainment', 'Other'];
 
+/** Budget rows the user has added (saved keys only). */
+export function getBudgetCategories(budgets = {}) {
+  const keys = Object.keys(budgets);
+  return [
+    ...CATEGORIES.filter((cat) => keys.includes(cat)),
+    ...keys.filter((cat) => !CATEGORIES.includes(cat)),
+  ];
+}
+
+/** Categories from expenses not yet added to budgets. */
+export function getAvailableBudgetCategories(budgets = {}) {
+  return CATEGORIES.filter((cat) => budgets[cat] === undefined);
+}
+
+/** Expense picker always includes defaults; custom budget names are appended. */
+export function getTransactionCategories(budgets = {}) {
+  const merged = [...CATEGORIES];
+  Object.keys(budgets).forEach((cat) => {
+    if (!merged.includes(cat)) merged.push(cat);
+  });
+  return merged;
+}
+
+export function normalizeBudgets(budgets) {
+  if (!budgets || typeof budgets !== 'object') return {};
+  return budgets;
+}
+
+export const INCOME_SOURCES = ['Transfer', 'Side income', 'Other'];
+
+export const INCOME_SOURCE_CONFIG = {
+  Transfer: 'bi-bank',
+  'Family transfer': 'bi-bank',
+  'Side income': 'bi-briefcase',
+  Other: 'bi-grid',
+};
+
 export function getCategoryIcon(category) {
   return CATEGORY_CONFIG[category] || CATEGORY_CONFIG.Other;
+}
+
+export function getIncomeSourceIcon(source) {
+  return INCOME_SOURCE_CONFIG[source] || INCOME_SOURCE_CONFIG.Other;
 }
 
 export const DEBT_PROVIDERS = [
@@ -26,8 +67,6 @@ export const DEBT_PROVIDERS = [
   'Friend Loan',
 ];
 
-export const BUDGET_CATEGORIES = ['Food', 'Transport', 'Entertainment', 'Shopping'];
-
 export const PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash', icon: 'bi-cash-coin' },
   { id: 'bank', label: 'Bank', icon: 'bi-bank' },
@@ -35,7 +74,7 @@ export const PAYMENT_METHODS = [
 ];
 
 export function createInitialBudgets() {
-  return Object.fromEntries(BUDGET_CATEGORIES.map((cat) => [cat, 0]));
+  return {};
 }
 
 export function createInitialData() {
@@ -44,6 +83,7 @@ export function createInitialData() {
 
   return {
     salary: 0,
+    salaryByMonth: {},
     paydayDate: 1,
     currentMonth,
     budgets: createInitialBudgets(),

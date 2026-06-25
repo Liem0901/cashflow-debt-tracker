@@ -8,15 +8,17 @@ import {
   getTransactionsForDate,
 } from '../utils/calculations';
 import {
+  alignDateToMonth,
   getMonthName,
+  isSameMonth,
   shiftMonthKey,
-  todayISO,
 } from '../utils/formatters';
 
 export default function CalendarPage() {
-  const { data } = useApp();
-  const [viewMonth, setViewMonth] = useState(data.currentMonth);
-  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const { data, selectedCalendarDate, setSelectedCalendarDate } = useApp();
+  const [viewMonth, setViewMonth] = useState(
+    () => selectedCalendarDate.slice(0, 7) || data.currentMonth
+  );
 
   const dailyExpenses = useMemo(
     () => getDailyExpenses(data.transactions, viewMonth, 'all', data.debts),
@@ -29,9 +31,25 @@ export default function CalendarPage() {
   );
 
   const dayTransactions = useMemo(
-    () => getTransactionsForDate(data.transactions, selectedDate, data.debts),
-    [data.transactions, data.debts, selectedDate]
+    () => getTransactionsForDate(data.transactions, selectedCalendarDate, data.debts),
+    [data.transactions, data.debts, selectedCalendarDate]
   );
+
+  const changeMonth = (delta) => {
+    setViewMonth((month) => {
+      const nextMonth = shiftMonthKey(month, delta);
+      setSelectedCalendarDate((date) => alignDateToMonth(date, nextMonth));
+      return nextMonth;
+    });
+  };
+
+  const selectDate = (dateStr) => {
+    setSelectedCalendarDate(dateStr);
+    const month = dateStr.slice(0, 7);
+    if (!isSameMonth(dateStr, viewMonth)) {
+      setViewMonth(month);
+    }
+  };
 
   return (
     <div className="page-padding space-y-4 animate-fade-in">
@@ -43,7 +61,7 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
-          onClick={() => setViewMonth((m) => shiftMonthKey(m, -1))}
+          onClick={() => changeMonth(-1)}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-portfolio-border bg-portfolio-card text-portfolio-gray shadow-card hover:border-white hover:text-white"
           aria-label="Previous month"
         >
@@ -54,7 +72,7 @@ export default function CalendarPage() {
         <h2 className="text-lg font-semibold text-white">{getMonthName(viewMonth)}</h2>
         <button
           type="button"
-          onClick={() => setViewMonth((m) => shiftMonthKey(m, 1))}
+          onClick={() => changeMonth(1)}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-portfolio-border bg-portfolio-card text-portfolio-gray shadow-card hover:border-white hover:text-white"
           aria-label="Next month"
         >
@@ -70,11 +88,15 @@ export default function CalendarPage() {
         monthKey={viewMonth}
         dailyExpenses={dailyExpenses}
         dailyUnpaid={dailyUnpaid}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
+        selectedDate={selectedCalendarDate}
+        onSelectDate={selectDate}
       />
 
-      <DayDetail dateStr={selectedDate} transactions={dayTransactions} debts={data.debts} />
+      <DayDetail
+        dateStr={selectedCalendarDate}
+        transactions={dayTransactions}
+        debts={data.debts}
+      />
     </div>
   );
 }

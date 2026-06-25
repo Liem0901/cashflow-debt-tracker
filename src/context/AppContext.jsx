@@ -1,90 +1,95 @@
-import { createContext, useContext, useMemo, useCallback, useEffect } from 'react';
+import { createContext, useContext, useMemo, useCallback, useEffect, useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
 import {
   createInitialData,
   generateId,
+  normalizeBudgets,
 } from '../data/initialData';
-import { getCurrentMonthKey } from '../utils/formatters';
+import { getCurrentMonthKey, todayISO } from '../utils/formatters';
 import {
   getCashExpenses,
-  getTotalExpenses,
-  getUpcomingDebtTotal,
-  getSafeBalance,
-  getDebtsDueThisMonth,
-  getRecentTransactions,
-  getTotalActiveDebt,
-  getCategorySpending,
+  getDashboardStats,
+  getSalaryForMonth,
 } from '../utils/calculations';
-import { getWarnings } from '../utils/warnings';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
 const AppContext = createContext(null);
 
+function normalizeSalaryData(data) {
+  if (data.salaryByMonth) return data;
+  const monthKey = data.currentMonth || getCurrentMonthKey();
+  return {
+    ...data,
+    salaryByMonth: data.salary ? { [monthKey]: data.salary } : {},
+  };
+}
+
+function normalizeAppData(data) {
+  const withSalary = normalizeSalaryData(data);
+  const budgets = normalizeBudgets(withSalary.budgets);
+  const hadHidden = Array.isArray(withSalary.hiddenBudgetCategories);
+  const budgetsChanged = budgets !== withSalary.budgets;
+
+  if (!hadHidden && !budgetsChanged) return withSalary;
+
+  const { hiddenBudgetCategories: _removed, ...rest } = withSalary;
+  return { ...rest, budgets };
+}
+
 function checkMonthReset(data) {
   const currentMonth = getCurrentMonthKey();
   if (data.currentMonth === currentMonth) return data;
+
+  const prevSalary = getSalaryForMonth(data, data.currentMonth);
+  const salaryByMonth = { ...(data.salaryByMonth || {}) };
+  if (salaryByMonth[currentMonth] == null && prevSalary > 0) {
+    salaryByMonth[currentMonth] = prevSalary;
+  }
 
   const archived = {
     month: data.currentMonth,
     transactions: data.transactions,
     debtsSnapshot: data.debts.map((d) => ({ ...d })),
     cashExpenses: getCashExpenses(data.transactions, data.currentMonth),
+    salary: prevSalary,
     archivedAt: new Date().toISOString(),
   };
 
   return {
     ...data,
     currentMonth,
+    salaryByMonth,
     archivedMonths: [...(data.archivedMonths || []), archived],
   };
 }
 
 export function AppProvider({ children }) {
   const { data, setData, loading, refreshing, refreshData, syncStatus } = useAppData();
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(todayISO);
 
   useEffect(() => {
     if (loading) return;
-    setData((prev) => checkMonthReset(prev));
+    setData((prev) => checkMonthReset(normalizeAppData(prev)));
   }, [loading, setData]);
 
   const monthKey = data.currentMonth || getCurrentMonthKey();
 
-  const stats = useMemo(() => {
-    const totalExpenses = getTotalExpenses(data.transactions, monthKey, data.debts);
-    const cashExpenses = getCashExpenses(data.transactions, monthKey);
-    const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey, data.transactions);
-    const safeBalance = getSafeBalance(data.salary, totalExpenses, upcomingDebt);
-    const totalActiveDebt = getTotalActiveDebt(data.debts);
-    const categorySpending = getCategorySpending(data.transactions, monthKey);
-    const debtsDueThisMonth = getDebtsDueThisMonth(data.debts, monthKey);
-    const recentTransactions = getRecentTransactions(data.transactions);
-    const warnings = getWarnings({
-      salary: data.salary,
-      safeBalance,
-      upcomingDebt,
-      debts: data.debts,
-    });
-
-    return {
-      cashExpenses,
-      totalExpenses,
-      upcomingDebt,
-      safeBalance,
-      totalActiveDebt,
-      categorySpending,
-      debtsDueThisMonth,
-      recentTransactions,
-      warnings,
-    };
-  }, [data, monthKey]);
+  const stats = useMemo(() => getDashboardStats(data, monthKey), [data, monthKey]);
 
   const updateSalary = useCallback(
-    (salary, paydayDate) => {
-      setData((prev) => ({
-        ...prev,
-        salary: Number(salary),
-        paydayDate: Number(paydayDate),
-      }));
+    (salary, paydayDate, targetMonthKey) => {
+      setData((prev) => {
+        const key = targetMonthKey || prev.currentMonth || getCurrentMonthKey();
+        return {
+          ...prev,
+          salary: Number(salary),
+          paydayDate: Number(paydayDate),
+          salaryByMonth: {
+            ...(prev.salaryByMonth || {}),
+            [key]: Number(salary),
+          },
+        };
+      });
     },
     [setData]
   );
@@ -142,6 +147,25 @@ export function AppProvider({ children }) {
         debts: [debt, ...prev.debts],
       }));
       return { transaction, debt };
+    },
+    [setData]
+  );
+
+  const addIncomeTransaction = useCallback(
+    ({ amount, source, description, date }) => {
+      const transaction = {
+        id: generateId('tx'),
+        type: 'income',
+        amount: Number(amount),
+        category: source,
+        description: description || '',
+        date,
+      };
+      setData((prev) => ({
+        ...prev,
+        transactions: [transaction, ...prev.transactions],
+      }));
+      return transaction;
     },
     [setData]
   );
@@ -272,6 +296,8 @@ export function AppProvider({ children }) {
       data,
       monthKey,
       stats,
+      selectedCalendarDate,
+      setSelectedCalendarDate,
       syncStatus,
       refreshing,
       refreshData,
@@ -279,6 +305,7 @@ export function AppProvider({ children }) {
       updateBudgets,
       addCashTransaction,
       addDebtTransaction,
+      addIncomeTransaction,
       addDebtManually,
       payDebt,
       markDebtPaid,
@@ -293,6 +320,8 @@ export function AppProvider({ children }) {
       data,
       monthKey,
       stats,
+      selectedCalendarDate,
+      setSelectedCalendarDate,
       syncStatus,
       refreshing,
       refreshData,
@@ -300,6 +329,7 @@ export function AppProvider({ children }) {
       updateBudgets,
       addCashTransaction,
       addDebtTransaction,
+      addIncomeTransaction,
       addDebtManually,
       payDebt,
       markDebtPaid,

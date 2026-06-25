@@ -1,4 +1,5 @@
 export function getTransactionPaidStatus(tx, debts = []) {
+  if (tx.type === 'income') return null;
   if (tx.type === 'cash') return 'paid';
 
   if (tx.debtId) {

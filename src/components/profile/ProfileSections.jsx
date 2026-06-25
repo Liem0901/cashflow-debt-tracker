@@ -1,51 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input, { Select } from '../ui/Input';
+import CategoryIcon from '../transactions/CategoryIcon';
 import { useApp } from '../../context/AppContext';
-import { CATEGORIES, DEBT_PROVIDERS } from '../../data/initialData';
+import { CATEGORIES, DEBT_PROVIDERS, getAvailableBudgetCategories, getBudgetCategories } from '../../data/initialData';
 import { formatCurrency, formatDate, todayISO } from '../../utils/formatters';
-
-export function SalarySettings() {
-  const { data, updateSalary } = useApp();
-  const [salary, setSalary] = useState(String(data.salary));
-  const [payday, setPayday] = useState(String(data.paydayDate || 25));
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    updateSalary(salary, payday);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  return (
-    <Card>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-        Salary Settings
-      </h2>
-      <div className="space-y-3">
-        <Input
-          label="Monthly Salary (net)"
-          type="number"
-          value={salary}
-          onChange={(e) => setSalary(e.target.value)}
-          min="0"
-        />
-        <Input
-          label="Payday (day of month)"
-          type="number"
-          value={payday}
-          onChange={(e) => setPayday(e.target.value)}
-          min="1"
-          max="31"
-        />
-        <Button onClick={handleSave} className="w-full" variant={saved ? 'secondary' : 'primary'}>
-          {saved ? 'Saved!' : 'Save Salary'}
-        </Button>
-      </div>
-    </Card>
-  );
-}
 
 function DebtItem({ debt, onPay, onMarkPaid }) {
   const [payAmount, setPayAmount] = useState('');
@@ -178,26 +138,37 @@ export function DebtManagement() {
   );
 }
 
-function BudgetCard({ cat, spent, limit, pct, over, value, onChange, onRemove }) {
+function BudgetCard({ cat, spent, limit, pct, over, value, onChange, onRemove, showIcon, canRemove }) {
   return (
     <div className="flex min-w-0 flex-col rounded-xl border border-portfolio-border bg-portfolio-elevated p-3">
       <div className="mb-1 flex items-start justify-between gap-1">
-        <span className="truncate font-medium text-white">{cat}</span>
-        <button
-          type="button"
-          onClick={() => onRemove(cat)}
-          className="shrink-0 rounded-md border border-portfolio-border px-1.5 py-0.5 text-[10px] text-portfolio-gray transition-colors hover:border-white hover:text-white"
-          aria-label={`Remove ${cat}`}
-        >
-          Remove
-        </button>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {showIcon && (
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted">
+              <CategoryIcon category={cat} className="text-sm" />
+            </span>
+          )}
+          <span className="truncate font-medium text-white">{cat}</span>
+        </div>
+        {canRemove && (
+          <button
+            type="button"
+            onClick={() => onRemove(cat)}
+            className="shrink-0 rounded-md border border-portfolio-border px-1.5 py-0.5 text-[10px] text-portfolio-gray transition-colors hover:border-white hover:text-white"
+            aria-label={`Remove ${cat}`}
+          >
+            Remove
+          </button>
+        )}
       </div>
-      <p className={`mb-1 text-xs ${over ? 'text-white' : 'text-portfolio-gray'}`}>
+      <p className={`mb-1 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
         {formatCurrency(spent)} / {formatCurrency(limit)}
       </p>
       <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
         <div
-          className={`h-full rounded-full transition-all ${over ? 'bg-white' : 'bg-portfolio-gray'}`}
+          className={`h-full rounded-full transition-all ${
+            over ? 'bg-metric-debt' : 'bg-metric-cash'
+          }`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -218,6 +189,16 @@ export function BudgetSettings() {
   const [budgets, setBudgets] = useState({ ...data.budgets });
   const [newCategory, setNewCategory] = useState('');
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setBudgets({ ...data.budgets });
+  }, [data.budgets]);
+
+  const categories = useMemo(() => getBudgetCategories(budgets), [budgets]);
+  const availableCategories = useMemo(
+    () => getAvailableBudgetCategories(budgets),
+    [budgets]
+  );
 
   const handleSave = () => {
     updateBudgets(budgets);
@@ -245,14 +226,30 @@ export function BudgetSettings() {
     });
   };
 
-  const categories = Object.keys(budgets);
-
   return (
     <Card>
       <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
         Monthly Budgets
       </h2>
-      <p className="mb-3 text-xs text-portfolio-gray">Set a monthly limit per category</p>
+      <p className="mb-3 text-xs text-portfolio-gray">
+        Add only the categories you want to track
+      </p>
+
+      {availableCategories.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {availableCategories.map((cat) => (
+            <Button
+              key={cat}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => addCategory(cat)}
+            >
+              + {cat}
+            </Button>
+          ))}
+        </div>
+      )}
 
       <div className="mb-4 flex gap-2">
         <input
@@ -260,7 +257,7 @@ export function BudgetSettings() {
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-          placeholder="New category name"
+          placeholder="Custom category name"
           className="flex-1 rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white placeholder:text-portfolio-gray focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
         />
         <Button type="button" size="sm" variant="outline" onClick={handleAddCategory}>
@@ -270,7 +267,7 @@ export function BudgetSettings() {
 
       <div
         className={`grid grid-cols-2 gap-3 ${
-          categories.length >= 4
+          categories.length >= 6
             ? 'max-h-[17.5rem] overflow-y-auto overscroll-contain pr-0.5'
             : ''
         }`}
@@ -289,7 +286,9 @@ export function BudgetSettings() {
               limit={limit}
               pct={pct}
               over={over}
-              value={budgets[cat]}
+              value={budgets[cat] ?? 0}
+              showIcon={CATEGORIES.includes(cat)}
+              canRemove
               onChange={(name, val) => setBudgets((prev) => ({ ...prev, [name]: val }))}
               onRemove={handleRemoveCategory}
             />
@@ -298,7 +297,7 @@ export function BudgetSettings() {
 
         {categories.length === 0 && (
           <p className="col-span-2 py-6 text-center text-sm text-portfolio-gray">
-            No categories yet — add one above
+            No budgets yet — tap a category above to add one
           </p>
         )}
       </div>
