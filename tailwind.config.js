@@ -17,7 +17,7 @@ export default {
         metric: {
           cash: '#00FFAA',
           expense: '#FFD700',
-          debt: '#FF1744',
+          debt: '#FF4569',
         },
       },
       fontFamily: {

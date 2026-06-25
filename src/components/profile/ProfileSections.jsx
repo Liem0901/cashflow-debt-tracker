@@ -174,9 +174,8 @@ function BudgetCard({
       </div>
       <div className="mb-1.5 h-1 overflow-hidden rounded-full bg-portfolio-muted">
         <div
-          className={`h-full rounded-full transition-all ${
-            over ? 'bg-metric-debt' : 'bg-metric-cash'
-          }`}
+          className={`h-full rounded-full transition-all ${over ? 'bg-metric-debt' : 'bg-metric-cash'
+            }`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -216,33 +215,59 @@ function BudgetCard({
   );
 }
 
+function normalizeBudgetValues(budgets) {
+  return Object.fromEntries(
+    Object.entries(budgets).map(([key, value]) => [
+      key,
+      value === '' || value == null ? 0 : Number(value),
+    ])
+  );
+}
+
+function buildPendingBudgets(localBudgets, limitDrafts) {
+  const next = { ...normalizeBudgetValues(localBudgets) };
+  Object.entries(limitDrafts).forEach(([cat, val]) => {
+    if (val !== '' && val != null) next[cat] = Number(val);
+  });
+  return next;
+}
+
 export function BudgetSettings() {
   const { data, updateBudgets, stats } = useApp();
-  const [budgets, setBudgets] = useState({ ...data.budgets });
+  const [localBudgets, setLocalBudgets] = useState(() => ({ ...data.budgets }));
+  const [limitDrafts, setLimitDrafts] = useState({});
   const [newCategory, setNewCategory] = useState('');
   const [saved, setSaved] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
 
   useEffect(() => {
-    setBudgets({ ...data.budgets });
+    setLocalBudgets({ ...data.budgets });
+    setLimitDrafts({});
   }, [data.budgets]);
 
-  const categories = useMemo(() => getBudgetCategories(budgets), [budgets]);
+  const hasChanges = useMemo(() => {
+    return (
+      JSON.stringify(buildPendingBudgets(localBudgets, limitDrafts)) !==
+      JSON.stringify(normalizeBudgetValues(data.budgets))
+    );
+  }, [localBudgets, limitDrafts, data.budgets]);
+
+  const categories = useMemo(() => getBudgetCategories(localBudgets), [localBudgets]);
   const availableCategories = useMemo(
-    () => getAvailableBudgetCategories(budgets),
-    [budgets]
+    () => getAvailableBudgetCategories(localBudgets),
+    [localBudgets]
   );
 
   const handleSave = () => {
-    updateBudgets(budgets);
+    updateBudgets(buildPendingBudgets(localBudgets, limitDrafts));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const addCategory = (name) => {
     const trimmed = name.trim();
-    if (!trimmed || budgets[trimmed] !== undefined) return false;
-    setBudgets((prev) => ({ ...prev, [trimmed]: 0 }));
+    if (!trimmed || localBudgets[trimmed] !== undefined) return false;
+    setLocalBudgets((prev) => ({ ...prev, [trimmed]: 0 }));
     setNewCategory('');
     return true;
   };
@@ -253,7 +278,12 @@ export function BudgetSettings() {
 
   const handleRemoveCategory = (cat) => {
     setActiveCategory((prev) => (prev === cat ? null : prev));
-    setBudgets((prev) => {
+    setLocalBudgets((prev) => {
+      const next = { ...prev };
+      delete next[cat];
+      return next;
+    });
+    setLimitDrafts((prev) => {
       const next = { ...prev };
       delete next[cat];
       return next;
@@ -294,21 +324,25 @@ export function BudgetSettings() {
           placeholder="Custom category name"
           className="flex-1 rounded-lg border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-sm text-white placeholder:text-portfolio-gray focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
         />
-        <Button type="button" size="sm" variant="outline" onClick={handleAddCategory}>
-          Add
-        </Button>
+        <button
+          type="button"
+          onClick={handleAddCategory}
+          className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-portfolio-border bg-portfolio-elevated text-white transition-colors hover:border-white hover:bg-portfolio-muted"
+          aria-label="Add category"
+        >
+          <i className="bi bi-plus-lg text-lg" aria-hidden="true" />
+        </button>
       </div>
 
       <div
-        className={`grid grid-cols-2 gap-3 ${
-          categories.length >= 6
+        className={`grid grid-cols-2 gap-3 ${categories.length >= 6
             ? 'max-h-[17.5rem] overflow-y-auto overscroll-contain pr-0.5'
             : ''
-        }`}
+          }`}
       >
         {categories.map((cat) => {
           const spent = stats.categorySpending[cat] || 0;
-          const limit = Number(budgets[cat]) || 0;
+          const limit = Number(localBudgets[cat]) || 0;
           const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0;
           const over = spent > limit && limit > 0;
 
@@ -320,12 +354,14 @@ export function BudgetSettings() {
               limit={limit}
               pct={pct}
               over={over}
-              value={budgets[cat] ?? 0}
+              value={limitDrafts[cat] ?? ''}
               showIcon={CATEGORIES.includes(cat)}
               canRemove
               isActive={activeCategory === cat}
               onActivate={(name) => setActiveCategory(name)}
-              onChange={(name, val) => setBudgets((prev) => ({ ...prev, [name]: val }))}
+              onChange={(name, val) =>
+                setLimitDrafts((prev) => ({ ...prev, [name]: val }))
+              }
               onRemove={handleRemoveCategory}
             />
           );
@@ -339,7 +375,12 @@ export function BudgetSettings() {
       </div>
 
       <div className="mt-3">
-        <Button onClick={handleSave} className="w-full" variant={saved ? 'secondary' : 'primary'}>
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges}
+          className="w-full"
+          variant={saved || !hasChanges ? 'secondary' : 'primary'}
+        >
           {saved ? 'Saved!' : 'Save Budgets'}
         </Button>
       </div>

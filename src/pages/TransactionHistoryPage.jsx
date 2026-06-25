@@ -5,12 +5,19 @@ import Button from '../components/ui/Button';
 import TransactionList from '../components/transactions/TransactionList';
 import { getTransactionCalendarDate } from '../utils/calculations';
 import { formatCurrency, getMonthName, isSameMonth, shiftMonthKey } from '../utils/formatters';
+import { getTransactionPaidStatus } from '../utils/transactionStatus';
+
+const STATUS_TABS = [
+  { id: 'paid', label: 'Paid' },
+  { id: 'unpaid', label: 'Unpaid' },
+];
 
 export default function TransactionHistoryPage() {
   const { data, monthKey } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [filterMonth, setFilterMonth] = useState(monthKey);
   const [viewAll, setViewAll] = useState(false);
+  const [statusTab, setStatusTab] = useState('paid');
 
   useEffect(() => {
     setFilterMonth(monthKey);
@@ -25,14 +32,15 @@ export default function TransactionHistoryPage() {
       );
     }
 
+    list = list.filter(
+      (t) => getTransactionPaidStatus(t, data.debts) === statusTab
+    );
+
     return list.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [data.transactions, data.debts, filterMonth, viewAll]);
+  }, [data.transactions, data.debts, filterMonth, viewAll, statusTab]);
 
   const total = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.type !== 'income')
-        .reduce((sum, t) => sum + Number(t.amount), 0),
+    () => transactions.reduce((sum, t) => sum + Number(t.amount), 0),
     [transactions]
   );
 
@@ -46,6 +54,15 @@ export default function TransactionHistoryPage() {
     setViewAll(false);
   };
 
+  const emptyMessage =
+    statusTab === 'paid'
+      ? viewAll
+        ? 'No paid transactions yet.'
+        : `No paid transactions in ${getMonthName(filterMonth)}.`
+      : viewAll
+        ? 'No unpaid transactions yet.'
+        : `No unpaid transactions in ${getMonthName(filterMonth)}.`;
+
   return (
     <div className="page-padding space-y-4 animate-fade-in">
       <header className="flex items-start justify-between gap-3">
@@ -54,17 +71,34 @@ export default function TransactionHistoryPage() {
           <p className="text-sm text-portfolio-gray">
             {!viewAll && <span>{getMonthName(filterMonth)} · </span>}
             {transactions.length} shown · {formatCurrency(total)}
-            {!viewAll && ` of ${data.transactions.length} total`}
           </p>
         </div>
-        <Button
-          size="sm"
-          variant={!viewAll ? 'primary' : 'outline'}
+        <button
+          type="button"
           onClick={() => setShowFilter((open) => !open)}
+          className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-portfolio-border bg-portfolio-elevated text-white transition-colors hover:border-white hover:bg-portfolio-muted"
+          aria-label={!viewAll ? 'Month filter active' : 'Filter transactions'}
+          aria-pressed={showFilter}
         >
-          {!viewAll ? 'Filtered' : 'Filter'}
-        </Button>
+          <i className="bi bi-funnel text-lg" aria-hidden="true" />
+        </button>
       </header>
+
+      <div className="flex rounded-xl bg-portfolio-elevated p-1">
+        {STATUS_TABS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setStatusTab(id)}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${statusTab === id
+                ? 'bg-white text-black shadow-sm'
+                : 'text-portfolio-gray'
+              }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {showFilter && (
         <Card animate>
@@ -117,11 +151,7 @@ export default function TransactionHistoryPage() {
           transactions={transactions}
           debts={data.debts}
           editable
-          emptyMessage={
-            viewAll
-              ? 'No transactions yet. Tap + to add one.'
-              : `No transactions in ${getMonthName(filterMonth)}.`
-          }
+          emptyMessage={emptyMessage}
         />
       </Card>
     </div>

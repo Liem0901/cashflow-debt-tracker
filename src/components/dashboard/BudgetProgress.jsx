@@ -7,39 +7,29 @@ import { formatCurrency } from '../../utils/formatters';
 function BudgetRow({ cat, spent, limit, pct, over }) {
   return (
     <div
-      className={`rounded-xl border p-3 ${
-        over
+      className={`rounded-xl border p-3 ${over
           ? 'border-metric-debt/40 bg-portfolio-elevated'
           : 'border-portfolio-border bg-portfolio-elevated'
-      }`}
+        }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          {CATEGORIES.includes(cat) && (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted">
-              <CategoryIcon category={cat} className="text-base" />
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="break-words font-medium leading-snug text-white">{cat}</p>
-            <p className={`mt-0.5 text-xs ${over ? 'text-metric-debt' : 'text-portfolio-gray'}`}>
-              {formatCurrency(spent)} / {formatCurrency(limit)}
-            </p>
-          </div>
-        </div>
-        {over ? (
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-metric-debt">
-            Over
+      <div className="flex items-center gap-2">
+        {CATEGORIES.includes(cat) && (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-portfolio-muted">
+            <CategoryIcon category={cat} className="text-base" />
           </span>
-        ) : limit > 0 && spent > 0 ? (
-          <span className="shrink-0 text-[10px] text-metric-cash">{Math.round(pct)}%</span>
-        ) : null}
+        )}
+        <p className="min-w-0 flex-1 truncate text-sm font-medium text-portfolio-gray">{cat}</p>
+        <p
+          className={`shrink-0 text-sm font-semibold ${over ? 'text-metric-debt' : 'text-white'
+            }`}
+        >
+          {formatCurrency(spent)} / {formatCurrency(limit)}
+        </p>
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-portfolio-muted">
         <div
-          className={`h-full rounded-full transition-all ${
-            over ? 'bg-metric-debt' : 'bg-metric-cash'
-          }`}
+          className={`h-full rounded-full transition-all ${over ? 'bg-metric-debt' : 'bg-metric-cash'
+            }`}
           style={{ width: `${pct}%` }}
         />
       </div>
