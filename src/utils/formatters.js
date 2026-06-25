@@ -1,7 +1,7 @@
-export function formatCurrency(amount) {
+export function formatCurrency(amount, { twoDecimals = false } = {}) {
   const value = Number(amount) || 0;
   return `RM ${value.toLocaleString('en-MY', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: twoDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   })}`;
 }
