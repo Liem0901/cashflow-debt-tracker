@@ -1,4 +1,4 @@
-import '../../lib/loadLocalEnv.js';
+import './loadLocalEnv.js';
 import { verifyAuthTokenFull } from './auth.js';
 
 function parseAllowlist(value) {

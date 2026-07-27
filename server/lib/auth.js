@@ -1,4 +1,4 @@
-import '../../lib/loadLocalEnv.js';
+import './loadLocalEnv.js';
 import admin from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 

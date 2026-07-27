@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:full": "node scripts/prepare-vercel-env.js && vercel dev",
+    "prebuild": "node scripts/check-serverless-count.js",
     "build": "vite build",
+    "check:api": "node scripts/check-serverless-count.js",
     "preview": "vite preview",
     "mongo:init": "node scripts/init-collections.js",
     "mongo:migrate": "node scripts/migrate-split-collections.js"

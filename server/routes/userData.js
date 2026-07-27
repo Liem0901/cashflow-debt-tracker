@@ -1,6 +1,6 @@
-import { getDb, getUserId } from './lib/mongodb.js';
-import { isAuthConfigured, verifyAuthToken } from './lib/auth.js';
-import { validateAppData, AppDataService, ensureIndexes } from './models/index.js';
+import { getDb, getUserId } from '../lib/mongodb.js';
+import { isAuthConfigured, verifyAuthToken } from '../lib/auth.js';
+import { validateAppData, AppDataService, ensureIndexes } from '../models/index.js';
 
 let indexesReady = false;
 
@@ -15,7 +15,7 @@ async function getAppDataService() {
   return new AppDataService(db);
 }
 
-export default async function handler(req, res) {
+export async function handleUserData(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');

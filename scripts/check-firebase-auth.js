@@ -28,7 +28,7 @@ for (const file of ['.env', '.env.local', '.env.development.local']) {
   loadEnvFile(path.join(root, file));
 }
 
-const { isAuthConfigured } = await import('../api/lib/auth.js');
+const { isAuthConfigured } = await import('../server/lib/auth.js');
 
 let saProject = null;
 let saEmail = null;
@@ -70,7 +70,7 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_CLIENT_EMAIL)
 }
 
 try {
-  const { verifyAuthToken } = await import('../api/lib/auth.js');
+  const { verifyAuthToken } = await import('../server/lib/auth.js');
   await verifyAuthToken('Bearer invalid');
   console.log('\nAdmin SDK init: OK (invalid token rejected as expected)');
 } catch (error) {

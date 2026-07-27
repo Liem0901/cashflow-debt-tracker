@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const LOCAL_OVERRIDE_KEYS = new Set([
   'MONGODB_URI',
@@ -51,6 +51,8 @@ let loaded = false;
 export function ensureLocalEnv() {
   if (loaded) return;
   loaded = true;
+
+  if (process.env.VERCEL) return;
 
   loadEnvFile(path.join(rootDir, '.env'));
   loadEnvFile(path.join(rootDir, '.env.development.local'), { overrideKeys: true });

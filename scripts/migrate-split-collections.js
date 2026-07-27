@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MongoClient } from 'mongodb';
-import { initCollections } from '../api/models/indexes.js';
-import { AppDataService } from '../api/models/appDataService.js';
-import { setupMongoDns } from '../api/lib/setupMongoDns.js';
+import { initCollections } from '../server/models/indexes.js';
+import { AppDataService } from '../server/models/appDataService.js';
+import { setupMongoDns } from '../server/lib/setupMongoDns.js';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
