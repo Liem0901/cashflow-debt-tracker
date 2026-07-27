@@ -1,28 +1,33 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import BudgetPage from './pages/BudgetPage';
-import AIAssistantPage from './pages/AIAssistantPage';
-import DebtsPage from './pages/DebtsPage';
-import CalendarPage from './pages/CalendarPage';
-import AddTransactionPage from './pages/AddTransactionPage';
-import TransactionHistoryPage from './pages/TransactionHistoryPage';
-import Profile from './pages/Profile';
+import LoadingScreen from './components/ui/LoadingScreen';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const BudgetPage = lazy(() => import('./pages/BudgetPage'));
+const AIAssistantPage = lazy(() => import('./pages/AIAssistantPage'));
+const DebtsPage = lazy(() => import('./pages/DebtsPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const AddTransactionPage = lazy(() => import('./pages/AddTransactionPage'));
+const TransactionHistoryPage = lazy(() => import('./pages/TransactionHistoryPage'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="budget" element={<BudgetPage />} />
-        <Route path="ai" element={<AIAssistantPage />} />
-        <Route path="debts" element={<DebtsPage />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route path="add" element={<AddTransactionPage />} />
-        <Route path="history" element={<TransactionHistoryPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="budget" element={<BudgetPage />} />
+          <Route path="ai" element={<AIAssistantPage />} />
+          <Route path="debts" element={<DebtsPage />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="add" element={<AddTransactionPage />} />
+          <Route path="history" element={<TransactionHistoryPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

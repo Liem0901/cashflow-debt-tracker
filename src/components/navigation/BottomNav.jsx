@@ -55,26 +55,14 @@ const tabs = [
     label: 'AI',
     center: true,
     icon: () => (
-      <svg className="pointer-events-none h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
-        />
-      </svg>
+      <i className="fa-solid fa-wand-magic-sparkles pointer-events-none text-xl text-white" aria-hidden />
     ),
   },
   {
     to: '/history',
     label: 'History',
     icon: () => (
-      <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-        />
-      </svg>
+      <i className="fa-solid fa-list pointer-events-none text-lg" aria-hidden />
     ),
   },
   {
@@ -126,7 +114,7 @@ function NavItem({ tab }) {
                   active ? 'opacity-100' : 'opacity-0'
                 }`}
               />
-              <span className="relative">{tab.icon(active)}</span>
+              <span className="relative z-10 flex items-center justify-center">{tab.icon(active)}</span>
             </span>
             <span
               className={`mt-1 block h-3.5 w-full truncate text-center text-[10px] font-medium leading-3.5 ${
