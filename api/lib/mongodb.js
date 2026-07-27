@@ -1,10 +1,13 @@
 import { MongoClient } from 'mongodb';
+import { setupMongoDns } from './setupMongoDns.js';
 
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
   console.warn('MONGODB_URI is not set — API will run in local-only mode');
 }
+
+setupMongoDns(uri);
 
 const globalWithMongo = globalThis;
 

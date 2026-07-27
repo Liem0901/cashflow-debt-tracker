@@ -9,7 +9,7 @@ import { getCurrentMonthKey, todayISO } from '../utils/formatters';
 import {
   getCashExpenses,
   getDashboardStats,
-  getSalaryForMonth,
+  getBaseSalaryForMonth,
 } from '../utils/calculations';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
@@ -40,7 +40,7 @@ function checkMonthReset(data) {
   const currentMonth = getCurrentMonthKey();
   if (data.currentMonth === currentMonth) return data;
 
-  const prevSalary = getSalaryForMonth(data, data.currentMonth);
+  const prevSalary = getBaseSalaryForMonth(data, data.currentMonth);
   const salaryByMonth = { ...(data.salaryByMonth || {}) };
   if (salaryByMonth[currentMonth] == null && prevSalary > 0) {
     salaryByMonth[currentMonth] = prevSalary;
@@ -64,8 +64,9 @@ function checkMonthReset(data) {
 }
 
 export function AppProvider({ children }) {
-  const { data, setData, loading, refreshing, refreshData, syncStatus } = useAppData();
+  const { data, setData, loading, refreshing, refreshData, syncStatus, syncError } = useAppData();
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(todayISO);
+  const [addTransactionModal, setAddTransactionModal] = useState(null);
 
   useEffect(() => {
     if (loading) return;
@@ -291,6 +292,17 @@ export function AppProvider({ children }) {
     setData(createInitialData(), { immediate: true });
   }, [setData]);
 
+  const openAddTransaction = useCallback((options = {}) => {
+    setAddTransactionModal({
+      mode: options.mode || 'cash',
+      source: options.source || null,
+    });
+  }, []);
+
+  const closeAddTransaction = useCallback(() => {
+    setAddTransactionModal(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       data,
@@ -298,7 +310,11 @@ export function AppProvider({ children }) {
       stats,
       selectedCalendarDate,
       setSelectedCalendarDate,
+      addTransactionModal,
+      openAddTransaction,
+      closeAddTransaction,
       syncStatus,
+      syncError,
       refreshing,
       refreshData,
       updateSalary,
@@ -322,7 +338,11 @@ export function AppProvider({ children }) {
       stats,
       selectedCalendarDate,
       setSelectedCalendarDate,
+      addTransactionModal,
+      openAddTransaction,
+      closeAddTransaction,
       syncStatus,
+      syncError,
       refreshing,
       refreshData,
       updateSalary,

@@ -1,13 +1,20 @@
-import AddTransaction from '../components/transactions/AddTransaction';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
+/** Deep link handler — opens the bottom sheet and returns to the previous screen. */
 export default function AddTransactionPage() {
-  return (
-    <div className="page-padding animate-fade-in">
-      <header className="mb-5">
-        <h1 className="text-xl font-bold text-white">Add Transaction</h1>
-        <p className="text-sm text-portfolio-gray">Quick entry — tap category & amount</p>
-      </header>
-      <AddTransaction />
-    </div>
-  );
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { openAddTransaction } = useApp();
+
+  useEffect(() => {
+    openAddTransaction({
+      mode: searchParams.get('mode') || 'cash',
+      source: searchParams.get('source') || undefined,
+    });
+    navigate('/', { replace: true });
+  }, [navigate, openAddTransaction, searchParams]);
+
+  return null;
 }

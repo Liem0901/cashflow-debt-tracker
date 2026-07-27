@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Card from '../ui/Card';
 import { formatCurrency, formatDate, daysUntil } from '../../utils/formatters';
 
@@ -5,9 +6,17 @@ export default function UpcomingDebts({ debts }) {
   if (debts.length === 0) {
     return (
       <Card animate>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-          Upcoming Debt
-        </h2>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
+            Upcoming Debt
+          </h2>
+          <Link
+            to="/debts"
+            className="text-xs font-medium text-portfolio-gray transition-colors hover:text-white"
+          >
+            Manage →
+          </Link>
+        </div>
         <p className="py-4 text-center text-sm text-portfolio-gray">No upcoming payments this month</p>
       </Card>
     );
@@ -15,9 +24,17 @@ export default function UpcomingDebts({ debts }) {
 
   return (
     <Card animate>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-        Upcoming Debt
-      </h2>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
+          Upcoming Debt
+        </h2>
+        <Link
+          to="/debts"
+          className="text-xs font-medium text-portfolio-gray transition-colors hover:text-white"
+        >
+          Manage →
+        </Link>
+      </div>
       <div className="space-y-3">
         {debts.map((debt) => {
           const paid = debt.amount - debt.remaining;

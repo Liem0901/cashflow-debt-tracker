@@ -1,9 +1,13 @@
+import { useNavigate } from 'react-router-dom';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { isAdminUser } from '../../lib/adminAccess';
 
 export default function AccountSettings() {
   const { user, signOut, isAuthBypassed, isGuest } = useAuth();
+  const navigate = useNavigate();
+  const showAdminLink = isAdminUser(user);
 
   if (isAuthBypassed || !user) return null;
 
@@ -34,6 +38,16 @@ export default function AccountSettings() {
           </p>
         </div>
       </div>
+      {showAdminLink ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="mb-2 w-full"
+          onClick={() => navigate('/admin')}
+        >
+          Admin dashboard
+        </Button>
+      ) : null}
       <Button type="button" variant="secondary" className="w-full" onClick={signOut}>
         Sign out
       </Button>

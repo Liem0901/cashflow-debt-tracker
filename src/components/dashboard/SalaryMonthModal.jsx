@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Button from '../ui/Button';
 import AmountInput from '../ui/AmountInput';
-import { getSalaryForMonth, hasSalaryOverride } from '../../utils/calculations';
+import { getBaseSalaryForMonth, hasSalaryOverride } from '../../utils/calculations';
 import { amountToCents, centsToAmount } from '../../utils/amountInput';
 import { getMonthName, shiftMonthKey } from '../../utils/formatters';
 
@@ -35,7 +35,7 @@ export default function SalaryMonthModal({ initialMonth, currentMonth, onConfirm
   }, [initialMonth]);
 
   useEffect(() => {
-    setAmountCents(amountToCents(getSalaryForMonth(data, selectedMonth)));
+    setAmountCents(amountToCents(getBaseSalaryForMonth(data, selectedMonth)));
   }, [data, selectedMonth]);
 
   const isCurrentMonth = selectedMonth === currentMonth;

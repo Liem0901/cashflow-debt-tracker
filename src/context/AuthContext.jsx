@@ -4,7 +4,14 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured, isAuthBypassed, requiresAuth } from '../lib/firebase';
+import {
+  auth,
+  googleProvider,
+  isFirebaseConfigured,
+  isAuthBypassed,
+  isLocalOnly,
+  requiresAuth,
+} from '../lib/firebase';
 import {
   readGuestSession,
   createGuestSession,
@@ -97,6 +104,7 @@ export function AuthProvider({ children }) {
       error,
       isFirebaseConfigured,
       isAuthBypassed,
+      isLocalOnly,
       requiresAuth,
       signInWithGoogle,
       signInAsGuest,

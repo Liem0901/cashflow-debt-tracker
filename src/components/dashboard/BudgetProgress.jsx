@@ -62,8 +62,8 @@ export default function BudgetProgress({ budgets, categorySpending }) {
         </h2>
         <p className="py-4 text-center text-sm text-portfolio-gray">
           No budgets set.{' '}
-          <Link to="/profile" className="text-white underline underline-offset-2">
-            Set in Profile
+          <Link to="/budget" className="text-white underline underline-offset-2">
+            Set up budget
           </Link>
         </p>
       </Card>
@@ -79,11 +79,19 @@ export default function BudgetProgress({ budgets, categorySpending }) {
           </h2>
           <p className="mt-0.5 text-xs text-portfolio-gray">Cash spending by category</p>
         </div>
-        {overCount > 0 && (
-          <span className="shrink-0 rounded-full border border-metric-debt/50 px-2 py-0.5 text-[10px] font-semibold uppercase text-metric-debt">
-            {overCount} over
-          </span>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {overCount > 0 && (
+            <span className="rounded-full border border-metric-debt/50 px-2 py-0.5 text-[10px] font-semibold uppercase text-metric-debt">
+              {overCount} over
+            </span>
+          )}
+          <Link
+            to="/budget"
+            className="text-xs font-medium text-portfolio-gray transition-colors hover:text-white"
+          >
+            Manage →
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-2">

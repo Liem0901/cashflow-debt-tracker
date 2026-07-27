@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
   getTransactionCategories,
@@ -19,8 +18,7 @@ const MODES = [
   { id: 'debt', label: 'Debt' },
 ];
 
-export default function AddTransaction() {
-  const navigate = useNavigate();
+export default function AddTransaction({ initialMode = 'cash', initialSource, onClose }) {
   const {
     addCashTransaction,
     addDebtTransaction,
@@ -33,11 +31,11 @@ export default function AddTransaction() {
     [data.budgets]
   );
 
-  const [mode, setMode] = useState('cash');
+  const [mode, setMode] = useState(initialMode === 'debt' ? 'debt' : initialMode);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [amountCents, setAmountCents] = useState(0);
   const [category, setCategory] = useState('Food');
-  const [incomeSource, setIncomeSource] = useState(INCOME_SOURCES[0]);
+  const [incomeSource, setIncomeSource] = useState(initialSource || INCOME_SOURCES[0]);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(selectedCalendarDate);
   const [provider, setProvider] = useState(DEBT_PROVIDERS[0]);
@@ -49,6 +47,13 @@ export default function AddTransaction() {
     setDate(selectedCalendarDate);
     setDueDate(selectedCalendarDate);
   }, [selectedCalendarDate]);
+
+  useEffect(() => {
+    if (initialMode === 'income' || initialMode === 'cash' || initialMode === 'debt') {
+      setMode(initialMode);
+    }
+    if (initialSource) setIncomeSource(initialSource);
+  }, [initialMode, initialSource]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -83,7 +88,7 @@ export default function AddTransaction() {
 
     setTimeout(() => {
       setSuccess(false);
-      navigate('/');
+      onClose?.();
     }, 800);
   };
 

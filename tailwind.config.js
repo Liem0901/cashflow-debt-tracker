@@ -25,7 +25,9 @@ export default {
       },
       boxShadow: {
         card: '0 2px 20px rgba(0, 0, 0, 0.6)',
-        nav: '0 -4px 24px rgba(0, 0, 0, 0.8)',
+        nav: '0 8px 32px rgba(0, 0, 0, 0.55)',
+        'glow-ai': '0 0 24px rgba(168, 85, 247, 0.45)',
+        'glow-fab': '0 8px 28px rgba(255, 255, 255, 0.15)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

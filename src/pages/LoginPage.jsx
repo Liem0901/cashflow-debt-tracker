@@ -4,7 +4,8 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
 export default function LoginPage() {
-  const { signInWithGoogle, signInAsGuest, error, isFirebaseConfigured, setError } = useAuth();
+  const { signInWithGoogle, signInAsGuest, error, isFirebaseConfigured, isLocalOnly, setError } =
+    useAuth();
   const [name, setName] = useState('');
   const [signingIn, setSigningIn] = useState(false);
 
@@ -91,7 +92,9 @@ export default function LoginPage() {
               {signingIn ? 'Signing in…' : 'Continue with Google'}
             </Button>
             <p className="mt-2 text-center text-xs text-portfolio-gray">
-              Google syncs your data with Firestore.
+              {isLocalOnly
+                ? 'Google sign-in only — data stays on this device.'
+                : 'Google syncs your data to the cloud.'}
             </p>
           </>
         )}

@@ -1,5 +1,19 @@
 import { getDb, getUserId } from './lib/mongodb.js';
 import { isAuthConfigured, verifyAuthToken } from './lib/auth.js';
+import { validateAppData, AppDataService, ensureIndexes } from './models/index.js';
+
+let indexesReady = false;
+
+async function getAppDataService() {
+  const db = await getDb();
+
+  if (!indexesReady) {
+    await ensureIndexes(db);
+    indexesReady = true;
+  }
+
+  return new AppDataService(db);
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,34 +43,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    const db = await getDb();
-    const collection = db.collection('users');
+    const appData = await getAppDataService();
 
     if (req.method === 'GET') {
-      const doc = await collection.findOne({ userId });
-      if (!doc) {
+      const result = await appData.load(userId);
+      if (result?.disabled) {
+        return res.status(403).json({ error: 'Account disabled' });
+      }
+      if (!result) {
         return res.status(200).json({ data: null, updatedAt: null });
       }
+
       return res.status(200).json({
-        data: doc.data,
-        updatedAt: doc.updatedAt,
+        data: result.data,
+        updatedAt: result.updatedAt,
+        version: result.version,
       });
     }
 
     if (req.method === 'PUT') {
-      const { data } = req.body || {};
-      if (!data || !Array.isArray(data.transactions) || !Array.isArray(data.debts)) {
-        return res.status(400).json({ error: 'Invalid data format' });
+      const existing = await appData.load(userId);
+      if (existing?.disabled) {
+        return res.status(403).json({ error: 'Account disabled' });
       }
 
-      const updatedAt = new Date();
-      await collection.updateOne(
-        { userId },
-        { $set: { userId, data, updatedAt } },
-        { upsert: true }
-      );
+      const { data } = req.body || {};
+      const validationErrors = validateAppData(data);
 
-      return res.status(200).json({ ok: true, updatedAt });
+      if (validationErrors.length > 0) {
+        return res.status(400).json({
+          error: 'Invalid data format',
+          details: validationErrors,
+        });
+      }
+
+      const result = await appData.save(userId, data);
+
+      return res.status(200).json({
+        ok: true,
+        updatedAt: result.updatedAt,
+        version: result.version,
+      });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

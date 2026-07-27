@@ -7,6 +7,7 @@
     -webkit-tap-highlight-color: transparent;
     color-scheme: dark;
     background-color: #000000;
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -88,6 +89,20 @@
   }
 
   .page-padding {
-    @apply px-4 pb-28 pt-3;
+    @apply px-4 pb-32 pt-3;
+  }
+
+  .glass-nav {
+    @apply border border-white/10 bg-portfolio-card/75 backdrop-blur-2xl;
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .bottom-nav {
+    height: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Clearance above fixed bottom nav (offset + bar height + gap) */
+  .fab-bottom {
+    bottom: calc(0.75rem + 4.5rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
   }
 }

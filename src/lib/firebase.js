@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 function trimEnv(value) {
   return typeof value === 'string' ? value.trim() : value;
@@ -22,13 +21,17 @@ export const isFirebaseConfigured = Boolean(
     firebaseConfig.appId
 );
 
-/** Skip Google login in local dev; required on production builds only. */
-export const isAuthBypassed = import.meta.env.DEV;
+/** Skip login screen entirely (optional dev shortcut). */
+export const isAuthBypassed = import.meta.env.VITE_AUTH_BYPASS === 'true';
+
+/** localStorage only — no MongoDB /api sync (default in dev). */
+export const isLocalOnly =
+  import.meta.env.VITE_LOCAL_ONLY === 'true' ||
+  (import.meta.env.DEV && import.meta.env.VITE_LOCAL_ONLY !== 'false');
 
 export const requiresAuth = isFirebaseConfigured && !isAuthBypassed;
 
 const app = isFirebaseConfigured && !isAuthBypassed ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();

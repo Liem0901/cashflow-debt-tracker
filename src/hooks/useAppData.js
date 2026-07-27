@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createInitialData, getStorageKey } from '../data/initialData';
-import { fetchUserData, saveUserData } from '../services/firestore';
+import { fetchUserData, saveUserData } from '../services/apiData';
 import { useAuth } from '../context/AuthContext';
-import { isAuthBypassed } from '../lib/firebase';
+import { isLocalOnly } from '../lib/firebase';
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -23,7 +23,7 @@ function writeLocalStorage(userId, data) {
   }
 }
 
-async function loadRemoteData(userId, cloudEnabled) {
+async function loadRemoteData(userId, cloudEnabled, getIdToken) {
   const local = readLocalStorage(userId);
 
   if (!cloudEnabled) {
@@ -34,7 +34,7 @@ async function loadRemoteData(userId, cloudEnabled) {
   }
 
   try {
-    const remote = await fetchUserData(userId);
+    const remote = await fetchUserData(userId, getIdToken);
 
     if (remote.offline) {
       return {
@@ -52,7 +52,7 @@ async function loadRemoteData(userId, cloudEnabled) {
     }
 
     if (local) {
-      await saveUserData(userId, local);
+      await saveUserData(userId, local, getIdToken);
       return {
         data: local,
         syncStatus: 'synced',
@@ -61,7 +61,7 @@ async function loadRemoteData(userId, cloudEnabled) {
 
     const initial = createInitialData();
     writeLocalStorage(userId, initial);
-    await saveUserData(userId, initial);
+    await saveUserData(userId, initial, getIdToken);
     return {
       data: initial,
       syncStatus: 'synced',
@@ -71,20 +71,22 @@ async function loadRemoteData(userId, cloudEnabled) {
     return {
       data: local || createInitialData(),
       syncStatus: 'error',
+      syncError: error.message || 'Sync failed',
     };
   }
 }
 
 export function useAppData() {
-  const { user, isFirebaseConfigured, isGuest } = useAuth();
+  const { user, isFirebaseConfigured, isGuest, getIdToken } = useAuth();
   const userId = user?.uid || 'default-user';
   const cloudEnabled =
-    isFirebaseConfigured && !isAuthBypassed && !isGuest && Boolean(user);
+    isFirebaseConfigured && !isLocalOnly && !isGuest && Boolean(user);
 
   const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncStatus, setSyncStatus] = useState('loading');
+  const [syncError, setSyncError] = useState('');
 
   const saveTimerRef = useRef(null);
   const isHydratingRef = useRef(true);
@@ -96,8 +98,9 @@ export function useAppData() {
 
       const runSave = async () => {
         setSyncStatus('syncing');
+        setSyncError('');
         try {
-          const result = await saveUserData(userId, payload);
+          const result = await saveUserData(userId, payload, getIdToken);
           if (result.offline) {
             setSyncStatus('local');
           } else {
@@ -106,6 +109,7 @@ export function useAppData() {
         } catch (error) {
           console.warn('Cloud save failed:', error);
           setSyncStatus('error');
+          setSyncError(error.message || 'Sync failed');
         }
       };
 
@@ -118,7 +122,7 @@ export function useAppData() {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(runSave, SAVE_DEBOUNCE_MS);
     },
-    [cloudEnabled, userId]
+    [cloudEnabled, getIdToken, userId]
   );
 
   const setData = useCallback(
@@ -139,30 +143,34 @@ export function useAppData() {
     refreshingRef.current = true;
     setRefreshing(true);
     setSyncStatus(cloudEnabled ? 'syncing' : 'local');
+    setSyncError('');
 
     try {
-      const result = await loadRemoteData(userId, cloudEnabled);
+      const result = await loadRemoteData(userId, cloudEnabled, getIdToken);
       setDataState(result.data);
       setSyncStatus(result.syncStatus);
+      setSyncError(result.syncError || '');
     } finally {
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [cloudEnabled, userId]);
+  }, [cloudEnabled, getIdToken, userId]);
 
   useEffect(() => {
     let cancelled = false;
     isHydratingRef.current = true;
     setLoading(true);
     setSyncStatus('loading');
+    setSyncError('');
 
     async function hydrate() {
-      const result = await loadRemoteData(userId, cloudEnabled);
+      const result = await loadRemoteData(userId, cloudEnabled, getIdToken);
 
       if (cancelled) return;
 
       setDataState(result.data);
       setSyncStatus(result.syncStatus);
+      setSyncError(result.syncError || '');
       isHydratingRef.current = false;
       setLoading(false);
     }
@@ -173,7 +181,7 @@ export function useAppData() {
       cancelled = true;
       clearTimeout(saveTimerRef.current);
     };
-  }, [userId, cloudEnabled]);
+  }, [userId, cloudEnabled, getIdToken]);
 
-  return { data, setData, loading, refreshing, refreshData, syncStatus };
+  return { data, setData, loading, refreshing, refreshData, syncStatus, syncError };
 }

@@ -41,7 +41,7 @@ export function getTotalActiveDebt(debts) {
     .reduce((sum, d) => sum + Number(d.remaining), 0);
 }
 
-export function getSalaryForMonth(data, monthKey) {
+export function getBaseSalaryForMonth(data, monthKey) {
   if (data.salaryByMonth?.[monthKey] != null) {
     return Number(data.salaryByMonth[monthKey]);
   }
@@ -56,6 +56,13 @@ export function getSalaryForMonth(data, monthKey) {
 
   if (data.salary != null) return Number(data.salary);
   return 0;
+}
+
+/** Base salary + income transactions for the month (shown as Monthly Salary). */
+export function getSalaryForMonth(data, monthKey) {
+  const base = getBaseSalaryForMonth(data, monthKey);
+  const income = getOtherIncomeTotal(data.transactions, monthKey);
+  return base + income;
 }
 
 export function hasSalaryOverride(data, monthKey) {
@@ -172,13 +179,14 @@ export function getMonthExpenseTotal(dailyExpenses) {
 }
 
 export function getDashboardStats(data, monthKey) {
-  const salary = getSalaryForMonth(data, monthKey);
+  const baseSalary = getBaseSalaryForMonth(data, monthKey);
   const otherIncome = getOtherIncomeTotal(data.transactions, monthKey);
-  const cashAvailable = getCashAvailable(salary, otherIncome);
+  const salary = baseSalary + otherIncome;
+  const cashAvailable = salary;
   const totalExpenses = getTotalExpenses(data.transactions, monthKey, data.debts);
   const cashExpenses = getCashExpenses(data.transactions, monthKey);
   const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey, data.transactions);
-  const safeBalance = getSafeBalance(salary, otherIncome, totalExpenses, upcomingDebt);
+  const safeBalance = getSafeBalance(salary, 0, totalExpenses, upcomingDebt);
   const totalActiveDebt = getTotalActiveDebt(data.debts);
   const categorySpending = getCategorySpending(data.transactions, monthKey);
   const debtsDueThisMonth = getUpcomingItemsThisMonth(

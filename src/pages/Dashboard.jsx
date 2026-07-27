@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import SalaryCard from '../components/dashboard/SalaryCard';
-import CashStatus from '../components/dashboard/CashStatus';
 import DonutChart from '../components/dashboard/DonutChart';
-import UpcomingDebts from '../components/dashboard/UpcomingDebts';
+import ExpenseTrendChart from '../components/dashboard/ExpenseTrendChart';
+import CategorySpendingChart from '../components/dashboard/CategorySpendingChart';
+import QuickInsights, { DashboardQuickLinks } from '../components/dashboard/DashboardExtras';
 import RecentExpenses from '../components/dashboard/RecentExpenses';
 import Warnings from '../components/dashboard/Warnings';
-import CanIBuySimulator from '../components/dashboard/CanIBuySimulator';
-import BudgetProgress from '../components/dashboard/BudgetProgress';
-import { getDashboardStats } from '../utils/calculations';
+import { getDashboardStats, getDailyExpenses } from '../utils/calculations';
 
 export default function Dashboard() {
   const { data, monthKey } = useApp();
@@ -23,6 +22,11 @@ export default function Dashboard() {
     [data, viewMonth]
   );
 
+  const dailyExpenses = useMemo(
+    () => getDailyExpenses(data.transactions, viewMonth, 'cash', data.debts),
+    [data.transactions, data.debts, viewMonth]
+  );
+
   return (
     <div className="page-padding space-y-4 animate-fade-in">
       <Warnings warnings={stats.warnings} />
@@ -34,26 +38,24 @@ export default function Dashboard() {
         onViewMonthChange={setViewMonth}
       />
 
-      <CashStatus
-        cashAvailable={stats.cashAvailable}
-        totalExpenses={stats.totalExpenses}
-        upcomingDebt={stats.upcomingDebt}
-        safeBalance={stats.safeBalance}
-      />
-
       <DonutChart
         totalExpenses={stats.totalExpenses}
         upcomingDebt={stats.upcomingDebt}
         safeBalance={stats.safeBalance}
       />
 
-      <BudgetProgress budgets={data.budgets} categorySpending={stats.categorySpending} />
+      <QuickInsights stats={stats} viewMonth={viewMonth} currentMonth={monthKey} />
 
-      <CanIBuySimulator safeBalance={stats.safeBalance} />
+      <ExpenseTrendChart dailyExpenses={dailyExpenses} monthKey={viewMonth} />
 
-      <UpcomingDebts debts={stats.debtsDueThisMonth} />
+      <CategorySpendingChart
+        categorySpending={stats.categorySpending}
+        budgets={data.budgets}
+      />
 
       <RecentExpenses transactions={stats.recentTransactions} debts={data.debts} />
+
+      <DashboardQuickLinks />
     </div>
   );
 }
