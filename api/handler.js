@@ -1,6 +1,7 @@
 import { handleUserData } from '../server/routes/userRoutes.js';
 import { handleAdmin } from '../server/routes/adminRoutes.js';
 import { handleAiChat } from '../server/routes/aiRoutes.js';
+import { handleHealth } from '../server/controllers/healthController.js';
 
 function getPath(req) {
   const raw = req.query.path;
@@ -15,6 +16,10 @@ export default async function handler(req, res) {
 
   if (root === 'data') {
     return handleUserData(req, res);
+  }
+
+  if (root === 'health') {
+    return handleHealth(req, res);
   }
 
   if (root === 'admin') {

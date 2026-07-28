@@ -101,6 +101,11 @@ async function checkApi() {
 
   const cases = [
     {
+      path: '/api/health',
+      ok: (status) => [200, 503].includes(status),
+      hint: 'expect 200 (mongo ok) or 503 (mongo blocked/missing)',
+    },
+    {
       path: '/api/data',
       ok: (status) => [200, 401, 503].includes(status),
       hint: 'expect 200 (no auth), 401 (auth on), or 503 (mongo missing)',

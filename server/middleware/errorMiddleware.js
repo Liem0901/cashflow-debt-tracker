@@ -1,21 +1,8 @@
 import { logger } from '../utils/logger.js';
-
-function flattenError(error) {
-  const parts = [];
-  let current = error;
-
-  while (current) {
-    if (current.message) parts.push(String(current.message));
-    if (current.code) parts.push(String(current.code));
-    if (current.name) parts.push(String(current.name));
-    current = current.cause;
-  }
-
-  return parts.join(' ');
-}
+import { flattenApiError } from '../utils/errorText.js';
 
 function isMongoSslError(error) {
-  const flat = flattenError(error);
+  const flat = flattenApiError(error);
   return (
     flat.includes('ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR') ||
     flat.includes('tlsv1 alert internal error') ||
@@ -25,7 +12,7 @@ function isMongoSslError(error) {
 
 function isMongoConnectivityError(error) {
   const name = error?.name || '';
-  const flat = flattenError(error);
+  const flat = flattenApiError(error);
 
   return (
     name === 'MongoServerSelectionError' ||
@@ -33,7 +20,8 @@ function isMongoConnectivityError(error) {
     name === 'MongoTimeoutError' ||
     isMongoSslError(error) ||
     /MONGODB_URI not configured/i.test(flat) ||
-    /MongoDB client unavailable/i.test(flat)
+    /MongoDB client unavailable/i.test(flat) ||
+    /reading 'db'/i.test(flat)
   );
 }
 
@@ -45,7 +33,7 @@ export async function withErrorHandling(res, handler) {
   try {
     return await handler();
   } catch (error) {
-    logger.error('API error:', flattenError(error));
+    logger.error('API error:', flattenApiError(error));
 
     if (isMongoConnectivityError(error)) {
       const sslHint = isMongoSslError(error)
@@ -65,10 +53,11 @@ export async function withErrorHandling(res, handler) {
       });
     }
 
-    if (error instanceof TypeError && String(error.message).includes("'db'")) {
+    if (error instanceof TypeError && /reading 'db'|MongoDB client/i.test(String(error.message))) {
       return res.status(503).json({
         error: 'Database unavailable',
-        message: 'MongoDB connection failed. Retry in a few seconds.',
+        message:
+          'MongoDB connection failed. Check Atlas Network Access allows 0.0.0.0/0, then redeploy and retry.',
       });
     }
 

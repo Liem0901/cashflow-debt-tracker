@@ -16,6 +16,7 @@
     "test:deploy": "node test.js",
     "preview": "vite preview",
     "mongo:init": "node scripts/init-collections.js",
+    "mongo:check": "node scripts/check-mongo-atlas.js",
     "mongo:migrate": "node scripts/migrate-split-collections.js",
     "mongo:migrate-savings": "node scripts/migrate-savings-entries.js"
   },
