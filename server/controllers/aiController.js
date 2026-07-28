@@ -2,6 +2,7 @@ import { validateAiChatRequest } from '../schemas/aiChatSchema.js';
 import { generateFinancialChat, isGeminiConfigured } from '../services/aiService.js';
 import { setAiCors, resolveUserId } from '../middleware/authMiddleware.js';
 import { withErrorHandling } from '../middleware/errorMiddleware.js';
+import { parseRequestBody } from '../utils/requestBody.js';
 import { logger } from '../utils/logger.js';
 
 export async function postAiChat(req, res) {
@@ -13,12 +14,13 @@ export async function postAiChat(req, res) {
     });
   }
 
-  const validationErrors = validateAiChatRequest(req.body);
+  const body = parseRequestBody(req);
+  const validationErrors = validateAiChatRequest(body);
   if (validationErrors.length > 0) {
     return res.status(400).json({ error: 'Invalid request', details: validationErrors });
   }
 
-  const { messages, context } = req.body;
+  const { messages, context } = body;
 
   try {
     const result = await generateFinancialChat({ messages, context });

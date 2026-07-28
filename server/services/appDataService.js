@@ -4,6 +4,7 @@ import { DebtService } from './debtService.js';
 import { SavingsService } from './savingsService.js';
 import { CategoryService } from './categoryService.js';
 import { normalizeSavingsHistoryForClient } from '../utils/dates.js';
+import { sanitizeAppDataForStorage } from '../utils/sanitizeAppData.js';
 
 function buildAppData(settings, transactions, debts, savingsHistory) {
   return {
@@ -66,9 +67,10 @@ export class AppDataService {
   }
 
   async save(userId, data) {
-    const settings = this.users.extractSettings(data);
-    const savingsHistory = normalizeSavingsHistoryForClient(data.savingsHistory || []);
-    const categories = this.categories.extractFromAppData(data, settings.budgets);
+    const sanitized = sanitizeAppDataForStorage(data);
+    const settings = this.users.extractSettings(sanitized);
+    const savingsHistory = normalizeSavingsHistoryForClient(sanitized.savingsHistory || []);
+    const categories = this.categories.extractFromAppData(sanitized, settings.budgets);
 
     const existing = await this.users.findByUserId(userId);
     if (existing?.legacyData) {
@@ -77,8 +79,8 @@ export class AppDataService {
 
     const [userResult] = await Promise.all([
       this.users.upsertSettings(userId, settings),
-      this.transactions.replaceAllForUser(userId, data.transactions || []),
-      this.debts.replaceAllForUser(userId, data.debts || []),
+      this.transactions.replaceAllForUser(userId, sanitized.transactions || []),
+      this.debts.replaceAllForUser(userId, sanitized.debts || []),
       this.savings.replaceAllForUser(userId, savingsHistory),
       this.categories.upsert(userId, categories),
     ]);

@@ -2,6 +2,7 @@ import { getDb } from '../config/mongodb.js';
 import { toUtcIso } from '../utils/dates.js';
 import { validateAppData } from '../schemas/appDataSchema.js';
 import { AppDataService } from '../services/appDataService.js';
+import { parseRequestBody } from '../utils/requestBody.js';
 import {
   setUserCors,
   resolveUserId,
@@ -33,13 +34,7 @@ export async function getUserData(req, res) {
 
 export async function saveUserData(req, res) {
   const appData = await getAppDataService();
-  const existing = await appData.load(req.userId);
-
-  if (existing?.disabled) {
-    return res.status(403).json({ error: 'Account disabled' });
-  }
-
-  const { data } = req.body || {};
+  const { data } = parseRequestBody(req);
   const validationErrors = validateAppData(data);
 
   if (validationErrors.length > 0) {
@@ -47,6 +42,11 @@ export async function saveUserData(req, res) {
       error: 'Invalid data format',
       details: validationErrors,
     });
+  }
+
+  const existing = await appData.users.findByUserId(req.userId);
+  if (existing?.disabled) {
+    return res.status(403).json({ error: 'Account disabled' });
   }
 
   const result = await appData.save(req.userId, data);

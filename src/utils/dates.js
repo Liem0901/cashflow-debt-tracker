@@ -1,5 +1,7 @@
 /** UTC timestamp helpers — ISO strings in client state and API payloads. */
 
+import { generateId } from '../data/initialData';
+
 export function utcNowIso() {
   return new Date().toISOString();
 }
@@ -20,7 +22,7 @@ export function normalizeSavingsEntry(entry) {
   if (!entry || typeof entry !== 'object') return entry;
   const date = toUtcIso(entry.date) || utcNowIso();
   return {
-    id: entry.id,
+    id: entry.id || generateId('save'),
     type: entry.type,
     amount: Number(entry.amount) || 0,
     month: entry.month || monthKeyFromTimestamp(date),
