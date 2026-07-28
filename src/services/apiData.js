@@ -55,19 +55,28 @@ async function fetchApi(path, options) {
 function mapHttpError(status, payload) {
   if (status === 401) {
     return new ApiSyncError(
-      'Unauthorized — check FIREBASE_SERVICE_ACCOUNT matches your Firebase project',
+      payload?.message ||
+        'Unauthorized — check FIREBASE_SERVICE_ACCOUNT matches your Firebase project',
       { status }
     );
   }
 
   if (status === 400) {
-    const detail = payload?.details?.[0];
+    const detail = payload?.details?.[0] || payload?.message;
     return new ApiSyncError(detail || 'Invalid data sent to server', { status });
   }
 
-  return new ApiSyncError(payload?.error || payload?.message || `API failed (${status})`, {
-    status,
-  });
+  if (status === 503 || status === 504) {
+    return new ApiSyncError(
+      payload?.message || payload?.error || 'Database temporarily unavailable',
+      { status }
+    );
+  }
+
+  return new ApiSyncError(
+    payload?.message || payload?.error || `API failed (${status})`,
+    { status }
+  );
 }
 
 export async function fetchUserData(userId, getIdToken) {
@@ -87,7 +96,11 @@ export async function fetchUserData(userId, getIdToken) {
     }
 
     if (!response.ok) {
-      throw mapHttpError(response.status, payload);
+      const apiError = mapHttpError(response.status, payload);
+      if (response.status >= 500) {
+        console.warn('Cloud fetch server error:', apiError.message);
+      }
+      throw apiError;
     }
 
     if (!payload.data) {
@@ -135,7 +148,11 @@ export async function saveUserData(userId, data, getIdToken) {
     }
 
     if (!response.ok) {
-      throw mapHttpError(response.status, payload);
+      const apiError = mapHttpError(response.status, payload);
+      if (response.status >= 500) {
+        console.warn('Cloud save server error:', apiError.message);
+      }
+      throw apiError;
     }
 
     return { ok: true, updatedAt: payload.updatedAt ?? null, offline: false };

@@ -44,8 +44,8 @@ export async function saveUserData(req, res) {
     });
   }
 
-  const existing = await appData.users.findByUserId(req.userId);
-  if (existing?.disabled) {
+  const existing = await appData.isAccountDisabled(req.userId);
+  if (existing) {
     return res.status(403).json({ error: 'Account disabled' });
   }
 
@@ -66,14 +66,14 @@ export async function handleUserData(req, res) {
 
   if (!requireMongoConfigured(res)) return;
 
-  const { userId, unauthorized } = await resolveUserId(req);
-  if (unauthorized) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  req.userId = userId;
-
   return withErrorHandling(res, async () => {
+    const { userId, unauthorized } = await resolveUserId(req);
+    if (unauthorized) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    req.userId = userId;
+
     if (req.method === 'GET') return getUserData(req, res);
     if (req.method === 'PUT') return saveUserData(req, res);
     return res.status(405).json({ error: 'Method not allowed' });

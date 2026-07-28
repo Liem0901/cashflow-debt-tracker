@@ -88,6 +88,11 @@ export class AppDataService {
     return userResult;
   }
 
+  async isAccountDisabled(userId) {
+    const user = await this.users.findByUserId(userId);
+    return Boolean(user?.disabled);
+  }
+
   async deleteUser(userId) {
     await Promise.all([
       this.users.deleteByUserId(userId),
