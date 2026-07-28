@@ -16,6 +16,8 @@
     "mongo:migrate": "node scripts/migrate-split-collections.js"
   },
   "dependencies": {
+    "@mdi/js": "^7.4.47",
+    "@mdi/react": "^1.6.1",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "firebase": "^12.15.0",

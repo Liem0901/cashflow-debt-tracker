@@ -9,8 +9,16 @@ const statusConfig = {
 export default function SyncStatus({ status, syncError = '', isLocalOnly = false, isGuest = false }) {
   let label = statusConfig[status]?.label ?? statusConfig.local.label;
 
-  if (status === 'local' && isLocalOnly) {
-    label = isGuest ? 'Guest · saved on this device' : 'Signed in · saved on this device';
+  if (status === 'local') {
+    if (isGuest) {
+      label = isLocalOnly
+        ? 'Guest · saved on this device'
+        : 'Guest · sign in with Google to sync';
+    } else if (isLocalOnly) {
+      label = 'Signed in · saved on this device';
+    } else {
+      label = 'Cloud sync unavailable · saved locally';
+    }
   }
 
   if (status === 'error' && syncError) {
