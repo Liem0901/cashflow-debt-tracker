@@ -1,6 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Bounds, Center, ContactShadows, Environment, OrbitControls, useGLTF } from '@react-three/drei';
+import { AI_BRAND_NAME } from '../../constants/aiBrand';
 import robotUrl from '../../assets/robot_ai.glb';
 
 function RobotModel() {
@@ -28,7 +29,7 @@ export default function RobotViewer({ className = '' }) {
   return (
     <div
       className={`relative mx-auto h-[min(34vh,13rem)] w-full max-w-[15rem] touch-none ${className}`}
-      aria-label="Financial assistant robot"
+      aria-label={`${AI_BRAND_NAME} robot`}
     >
       <Suspense fallback={<RobotFallback />}>
         <Canvas

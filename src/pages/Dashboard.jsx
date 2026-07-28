@@ -4,7 +4,7 @@ import SalaryCard from '../components/dashboard/SalaryCard';
 import DonutChart from '../components/dashboard/DonutChart';
 import ExpenseTrendChart from '../components/dashboard/ExpenseTrendChart';
 import CategorySpendingChart from '../components/dashboard/CategorySpendingChart';
-import QuickInsights, { DashboardQuickLinks } from '../components/dashboard/DashboardExtras';
+import QuickInsights, { DashboardQuickLinks, SavingsTeaser } from '../components/dashboard/DashboardExtras';
 import RecentExpenses from '../components/dashboard/RecentExpenses';
 import Warnings from '../components/dashboard/Warnings';
 import { getDashboardStats, getDailyExpenses } from '../utils/calculations';
@@ -23,7 +23,7 @@ export default function Dashboard() {
   );
 
   const dailyExpenses = useMemo(
-    () => getDailyExpenses(data.transactions, viewMonth, 'cash', data.debts),
+    () => getDailyExpenses(data.transactions, viewMonth, 'all', data.debts, true),
     [data.transactions, data.debts, viewMonth]
   );
 
@@ -54,6 +54,8 @@ export default function Dashboard() {
       />
 
       <RecentExpenses transactions={stats.recentTransactions} debts={data.debts} />
+
+      <SavingsTeaser balance={data.savingsBalance} goal={data.savingsGoal} />
 
       <DashboardQuickLinks />
     </div>

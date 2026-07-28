@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
+import { AI_BRAND_SHORT } from '../../constants/aiBrand';
 import MarkdownText from './MarkdownText';
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-1 px-1 py-2" aria-label="Assistant is typing">
+    <div className="flex gap-1 px-1 py-2" aria-label={`${AI_BRAND_SHORT} is typing`}>
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
@@ -21,7 +22,6 @@ export default function ChatMessage({
   content,
   isStreaming,
   onCopy,
-  onRegenerate,
   showActions,
 }) {
   const isUser = role === 'user';
@@ -42,7 +42,7 @@ export default function ChatMessage({
       >
         {!isUser && (
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-portfolio-gray">
-            Assistant
+            {AI_BRAND_SHORT}
           </p>
         )}
         {isStreaming && !content ? (
@@ -54,20 +54,13 @@ export default function ChatMessage({
         )}
 
         {!isUser && showActions && content && !isStreaming ? (
-          <div className="mt-3 flex gap-2 border-t border-portfolio-border pt-2">
+          <div className="mt-3 border-t border-portfolio-border pt-2">
             <button
               type="button"
               onClick={onCopy}
               className="text-xs text-portfolio-gray transition-colors hover:text-white"
             >
               Copy
-            </button>
-            <button
-              type="button"
-              onClick={onRegenerate}
-              className="text-xs text-portfolio-gray transition-colors hover:text-white"
-            >
-              Regenerate
             </button>
           </div>
         ) : null}

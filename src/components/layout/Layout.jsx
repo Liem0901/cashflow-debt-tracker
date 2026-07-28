@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import AppLogo from './AppLogo';
+import SyncBadge from './SyncBadge';
 import BottomNav from '../navigation/BottomNav';
 import FloatingActionButton from '../navigation/FloatingActionButton';
 import AddTransactionModal from '../transactions/AddTransactionModal';
@@ -21,6 +22,7 @@ export default function Layout() {
       {!isAIPage ? (
         <div className="app-top-bar px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
           <AppLogo />
+          <SyncBadge />
         </div>
       ) : null}
       <div

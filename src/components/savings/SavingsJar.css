@@ -1,0 +1,50 @@
+/* Rotating-ellipse liquid surface */
+.jar-fluid__waves {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 28px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.jar-fluid__wave {
+  position: absolute;
+  left: -50%;
+  width: 200%;
+  height: 800%;
+  border-radius: 42%;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.jar-fluid__wave--back {
+  top: -720%;
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 55%, #f59e0b 100%);
+  opacity: 0.6;
+  animation: jar-wave-spin 9s linear infinite reverse;
+}
+
+.jar-fluid__wave--front {
+  top: -740%;
+  background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 40%, #fbbf24 100%);
+  opacity: 0.95;
+  animation: jar-wave-spin 5.5s linear infinite;
+}
+
+@keyframes jar-wave-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jar-fluid__wave {
+    animation: none !important;
+  }
+}

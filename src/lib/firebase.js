@@ -5,6 +5,16 @@ function trimEnv(value) {
   return typeof value === 'string' ? value.trim() : value;
 }
 
+/** Parse VITE_* booleans; strips trailing inline `#` comments from .env values. */
+function parseEnvBool(value) {
+  const trimmed = trimEnv(value);
+  if (!trimmed) return null;
+  const normalized = trimmed.split(/\s+#/)[0].trim().toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+  return null;
+}
+
 const firebaseConfig = {
   apiKey: trimEnv(import.meta.env.VITE_FIREBASE_API_KEY),
   authDomain: trimEnv(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
@@ -24,10 +34,12 @@ export const isFirebaseConfigured = Boolean(
 /** Skip login screen entirely (optional dev shortcut). */
 export const isAuthBypassed = import.meta.env.VITE_AUTH_BYPASS === 'true';
 
-/** localStorage only — no MongoDB /api sync (default in dev). */
+const localOnlySetting = parseEnvBool(import.meta.env.VITE_LOCAL_ONLY);
+
+/** localStorage only — no MongoDB /api sync (default in dev unless VITE_LOCAL_ONLY=false). */
 export const isLocalOnly =
-  import.meta.env.VITE_LOCAL_ONLY === 'true' ||
-  (import.meta.env.DEV && import.meta.env.VITE_LOCAL_ONLY !== 'false');
+  localOnlySetting === true ||
+  (import.meta.env.DEV && localOnlySetting !== false);
 
 export const requiresAuth = isFirebaseConfigured && !isAuthBypassed;
 

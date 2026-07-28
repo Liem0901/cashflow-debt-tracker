@@ -32,6 +32,10 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.35s ease-out',
+        'coin-shine': 'coinShine 2.8s ease-in-out infinite',
+        'jar-wave': 'jarWave 4s linear infinite',
+        'jar-wave-slow': 'jarWave 7s linear infinite reverse',
+        'jar-bubble': 'jarBubble 3.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -41,6 +45,20 @@ export default {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        coinShine: {
+          '0%': { transform: 'translateX(-120%) skewX(-12deg)' },
+          '55%': { transform: 'translateX(220%) skewX(-12deg)' },
+          '100%': { transform: 'translateX(220%) skewX(-12deg)' },
+        },
+        jarWave: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        jarBubble: {
+          '0%': { transform: 'translateY(0) scale(1)', opacity: '0.45' },
+          '70%': { opacity: '0.25' },
+          '100%': { transform: 'translateY(-28px) scale(0.85)', opacity: '0' },
         },
       },
     },

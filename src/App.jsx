@@ -11,6 +11,7 @@ const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const AddTransactionPage = lazy(() => import('./pages/AddTransactionPage'));
 const TransactionHistoryPage = lazy(() => import('./pages/TransactionHistoryPage'));
 const Profile = lazy(() => import('./pages/Profile'));
+const SavingsPage = lazy(() => import('./pages/SavingsPage'));
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="add" element={<AddTransactionPage />} />
           <Route path="history" element={<TransactionHistoryPage />} />
+          <Route path="savings" element={<SavingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

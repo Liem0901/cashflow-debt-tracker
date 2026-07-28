@@ -17,15 +17,21 @@ const BAR_COLORS = ['#FFD700', '#E6C200', '#CCAD00', '#B39900', '#998500', '#807
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const item = payload[0].payload;
+  const hasBudget = item.limit > 0;
+
   return (
     <div className="rounded-xl border border-portfolio-border bg-portfolio-card px-3 py-2 shadow-card">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-portfolio-gray">
-        {item.category}
+        {item.fullName || item.category}
       </p>
       <p className="text-sm font-bold text-white">{formatCurrency(item.amount)}</p>
-      {item.limit > 0 ? (
-        <p className="mt-0.5 text-xs text-portfolio-gray">
-          Budget {formatCurrency(item.limit)}
+      {hasBudget ? (
+        <p
+          className={`mt-0.5 text-xs font-semibold ${
+            item.amount > item.limit ? 'text-metric-debt' : 'text-portfolio-gray'
+          }`}
+        >
+          {formatCurrency(Math.abs(item.limit - item.amount))}
         </p>
       ) : null}
     </div>
@@ -62,6 +68,7 @@ export default function CategorySpendingChart({ categorySpending, budgets = {} }
   }
 
   const chartHeight = Math.max(140, data.length * 32);
+  const overItems = data.filter((item) => item.limit > 0 && item.amount > item.limit);
 
   return (
     <Card animate>
@@ -118,6 +125,19 @@ export default function CategorySpendingChart({ categorySpending, budgets = {} }
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {overItems.length > 0 ? (
+        <div className="mt-3 space-y-1.5 border-t border-portfolio-border pt-3">
+          {overItems.map((item) => (
+            <div key={item.fullName} className="flex items-center justify-between gap-2 text-xs">
+              <span className="truncate text-portfolio-gray">{item.fullName}</span>
+              <span className="shrink-0 font-semibold text-metric-debt">
+                {formatCurrency(Math.abs(item.limit - item.amount))}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </Card>
   );
 }

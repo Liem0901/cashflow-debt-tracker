@@ -1,4 +1,4 @@
-import { getDashboardStats } from './calculations';
+import { getDashboardStats, getCombinedCategoryTotals } from './calculations';
 import { formatCurrency, getMonthName, shiftMonthKey } from './formatters';
 
 export function computeFinancialHealthScore(stats) {
@@ -15,12 +15,37 @@ export function computeFinancialHealthScore(stats) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+export function formatTopCategorySummary({
+  topCategory,
+  topCategoryPaid,
+  topCategoryUpcoming,
+  topCategoryAmount,
+}) {
+  if (topCategory === '—') return '—';
+
+  if (topCategoryUpcoming > 0 && topCategoryPaid > 0) {
+    return `**${topCategory}** (${formatCurrency(topCategoryAmount)} — ${formatCurrency(topCategoryPaid)} paid + ${formatCurrency(topCategoryUpcoming)} debts)`;
+  }
+
+  if (topCategoryUpcoming > 0) {
+    return `**${topCategory}** (${formatCurrency(topCategoryUpcoming)} debts)`;
+  }
+
+  return `**${topCategory}** (${formatCurrency(topCategoryPaid || topCategoryAmount)} paid)`;
+}
+
 export function buildAIInsights(data, monthKey) {
   const stats = getDashboardStats(data, monthKey);
   const prevMonth = shiftMonthKey(monthKey, -1);
   const prevStats = getDashboardStats(data, prevMonth);
+  const combined = getCombinedCategoryTotals(data.transactions, data.debts, monthKey);
 
-  const topCategory = Object.entries(stats.categorySpending).sort(([, a], [, b]) => b - a)[0];
+  const topCombined = Object.entries(combined).sort(([, a], [, b]) => b.total - a.total)[0];
+  const topCategory = topCombined?.[0] || '—';
+  const topCategoryPaid = topCombined?.[1]?.paid || 0;
+  const topCategoryUpcoming = topCombined?.[1]?.upcoming || 0;
+  const topCategoryAmount = topCombined?.[1]?.total || 0;
+
   const prevExpenses = prevStats.totalExpenses || 0;
   const expenseDelta =
     prevExpenses > 0
@@ -38,8 +63,16 @@ export function buildAIInsights(data, monthKey) {
     monthLabel: getMonthName(monthKey),
     expenseDelta,
     spentLess: expenseDelta < 0,
-    topCategory: topCategory?.[0] || '—',
-    topCategoryAmount: topCategory?.[1] || 0,
+    topCategory,
+    topCategoryAmount,
+    topCategoryPaid,
+    topCategoryUpcoming,
+    topCategorySummary: formatTopCategorySummary({
+      topCategory,
+      topCategoryPaid,
+      topCategoryUpcoming,
+      topCategoryAmount,
+    }),
     potentialSavings: potentialSavings || 0,
     safeBalance: stats.safeBalance,
     upcomingBills: stats.debtsDueThisMonth.slice(0, 3),

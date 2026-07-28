@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
+import { AI_BRAND_NAME, AI_BRAND_SHORT } from '../../constants/aiBrand';
 
 const RobotViewer = lazy(() => import('./RobotViewer'));
 
@@ -29,11 +30,11 @@ export default function AILandingHero({ onPrimaryAction }) {
           className="w-full shrink-0 px-2 text-center"
         >
           <h2 className="text-lg font-bold leading-snug text-white sm:text-xl">
-            Hello! I&apos;m your Financial Assistant
+            Hello! I&apos;m {AI_BRAND_SHORT}
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-portfolio-gray sm:text-sm">
-            Ask me anything about your budget, spending, debts, or savings. I can analyze your
-            transactions and help you plan ahead.
+            {AI_BRAND_NAME} helps with your budget, spending, debts, and savings. Ask anything —
+            I analyze your transactions and help you plan ahead.
           </p>
         </motion.div>
 

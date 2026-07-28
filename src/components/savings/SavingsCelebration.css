@@ -1,0 +1,58 @@
+.savings-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.savings-confetti__piece {
+  position: absolute;
+  top: -12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: savings-confetti-fall var(--duration, 2s) var(--delay, 0s) ease-out forwards;
+}
+
+@keyframes savings-confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(var(--spin, 360deg));
+  }
+}
+
+.jar-goal-reached .jar-shell {
+  border-color: rgba(251, 191, 36, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(251, 191, 36, 0.25),
+    0 0 28px rgba(251, 191, 36, 0.35),
+    0 0 48px rgba(251, 191, 36, 0.15);
+  animation: jar-goal-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes jar-goal-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.25),
+      0 0 24px rgba(251, 191, 36, 0.3),
+      0 0 40px rgba(251, 191, 36, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.45),
+      0 0 36px rgba(251, 191, 36, 0.5),
+      0 0 56px rgba(251, 191, 36, 0.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .savings-confetti__piece,
+  .jar-goal-reached .jar-shell {
+    animation: none !important;
+  }
+}

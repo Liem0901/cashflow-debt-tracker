@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { AI_BRAND_NAME } from '../../constants/aiBrand';
 
 const iconButtonClass =
   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-portfolio-gray transition-colors hover:bg-portfolio-elevated hover:text-white';
@@ -13,7 +14,7 @@ export default function AIAssistantHeader({ onNewChat, compact = false }) {
       <div className="flex items-center justify-between gap-3">
         <h1 className="flex min-w-0 items-center gap-2 text-base font-bold text-white">
           <i className="fa-regular fa-comment shrink-0 text-[1.125rem]" aria-hidden />
-          <span className="truncate">AI Assistant</span>
+          <span className="truncate">{AI_BRAND_NAME}</span>
         </h1>
 
         <div className="flex shrink-0 items-center gap-1">

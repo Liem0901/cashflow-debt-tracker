@@ -81,13 +81,20 @@ export default function MarkdownText({ content, className = '' }) {
 }
 
 function renderInline(text) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\[\[[^\]]+\]\])/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
         <strong key={i} className="font-semibold text-white">
           {part.slice(2, -2)}
         </strong>
+      );
+    }
+    if (part.startsWith('[[') && part.endsWith(']]')) {
+      return (
+        <span key={i} className="font-semibold text-metric-debt">
+          {part.slice(2, -2)}
+        </span>
       );
     }
     return part;

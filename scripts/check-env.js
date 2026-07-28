@@ -53,6 +53,8 @@ const checks = [
   ['MONGODB_URI', present(env.MONGODB_URI) ? 'set' : 'MISSING'],
   ['ADMIN_EMAILS', present(env.ADMIN_EMAILS) ? 'set' : 'MISSING'],
   ['VITE_ADMIN_EMAILS', present(env.VITE_ADMIN_EMAILS) ? 'set' : 'MISSING'],
+  ['GEMINI_API_KEY', present(env.GEMINI_API_KEY) ? 'set' : 'MISSING (AI chat uses rule-based fallback)'],
+  ['AI_MODEL', env.AI_MODEL || '(unset → gemini-2.0-flash)'],
 ];
 
 for (const [key, value] of checks) {
@@ -89,7 +91,7 @@ if (localOnly || env.VITE_LOCAL_ONLY !== 'false') {
   if (!serverFirebaseOk) {
     console.log('  WARN:  server Firebase credentials missing — API auth will fail');
   }
-  console.log('  Run:   npm run dev:full  →  http://localhost:3000');
+  console.log('  Run:   npm run dev:full  →  http://localhost:3005');
   console.log('  Note:  npm run dev (5173) has NO API — sync will fail');
 }
 

@@ -66,11 +66,15 @@ export default function AIInsightCards({ insights, onQuickAction }) {
 
         <InsightCard delay={0.15}>
           <p className="text-xs font-medium uppercase tracking-wide text-portfolio-gray">
-            Biggest expense
+            Top category
           </p>
           <p className="mt-2 text-lg font-semibold text-white">{insights.topCategory}</p>
           <p className="text-xs text-portfolio-gray">
-            {formatCurrency(insights.topCategoryAmount)}
+            {insights.topCategoryUpcoming > 0 && insights.topCategoryPaid > 0
+              ? `${formatCurrency(insights.topCategoryAmount)} total (${formatCurrency(insights.topCategoryPaid)} paid + ${formatCurrency(insights.topCategoryUpcoming)} debts)`
+              : insights.topCategoryUpcoming > 0
+                ? `${formatCurrency(insights.topCategoryUpcoming)} debts`
+                : formatCurrency(insights.topCategoryPaid || insights.topCategoryAmount)}
           </p>
         </InsightCard>
 

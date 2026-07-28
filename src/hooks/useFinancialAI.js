@@ -1,10 +1,73 @@
 import { formatCurrency, getMonthName, shiftMonthKey } from '../utils/formatters';
 import { getDashboardStats, getCategorySpending } from '../utils/calculations';
 import { buildAIInsights } from '../utils/aiInsights';
+import {
+  computeSavingsCapacity,
+  extractSalaryFromQuestion,
+} from '../utils/savingsAnalysis';
+import { getMonthlyManualSavingsNet } from '../utils/savings';
+import { AI_BRAND_NAME, AI_BRAND_SHORT } from '../constants/aiBrand';
 
 function extractAmount(text) {
   const match = text.match(/(?:rm\s?)?(\d[\d,]*(?:\.\d{1,2})?)/i);
   return match ? Number(match[1].replace(/,/g, '')) : null;
+}
+
+function findAffordabilityAmount(question, previousMessages = []) {
+  const fromQuestion = extractAmount(question);
+  if (fromQuestion != null) return fromQuestion;
+
+  for (let i = previousMessages.length - 1; i >= 0; i--) {
+    const msg = previousMessages[i];
+    const amount = extractAmount(msg.content || '');
+    if (
+      amount != null &&
+      /hold off|afford|safe-to-spend|short|can afford/i.test(msg.content || '')
+    ) {
+      return amount;
+    }
+  }
+
+  return null;
+}
+
+function explainSavingsCapacity(stats, insights, monthLabel, data, monthKey, salaryOverride = null) {
+  const manualSavingsSetAside = getMonthlyManualSavingsNet(data.savingsHistory, monthKey);
+  const capacity = computeSavingsCapacity(stats, manualSavingsSetAside, salaryOverride);
+  const { amountAvailableToSave, salary, totalExpenses, upcomingDebt } = capacity;
+  const usingOverride = salaryOverride != null && salaryOverride !== stats.salary;
+
+  const headline =
+    amountAvailableToSave >= 0
+      ? `You can save up to **${formatCurrency(amountAvailableToSave)}** this month.`
+      : `You're **${formatCurrency(Math.abs(amountAvailableToSave))}** over budget — no room to save until expenses or bills come down.`;
+
+  const breakdown = `**${monthLabel} breakdown** (${usingOverride ? 'using your stated salary' : 'from your records'}):\n\n| | Amount |\n|---|---|\n| Salary | ${formatCurrency(salary)} |\n| Paid expenses | ${formatCurrency(totalExpenses)} |\n| Upcoming bills | ${formatCurrency(upcomingDebt)} |\n| **Available to save** | **${formatCurrency(amountAvailableToSave)}** |`;
+
+  const cutsNote =
+    insights.potentialSavings > 0
+      ? `\n\nIf you trim discretionary spending (~15% on large categories), you could free up about **${formatCurrency(insights.potentialSavings)}** more — but that's a cut target, not guaranteed leftover.`
+      : '';
+
+  return {
+    content: `${headline}\n\n${breakdown}${cutsNote}`,
+    followUps: ['Where did my money go?', 'What bills are coming up?', 'Help me cut spending'],
+  };
+}
+
+function explainAffordability(price, stats) {
+  const ok = stats.safeBalance >= price;
+  if (ok) {
+    return {
+      content: `You can afford **${formatCurrency(price)}** — your safe-to-spend balance is **${formatCurrency(stats.safeBalance)}**, so you'd still have **${formatCurrency(stats.safeBalance - price)}** left after that purchase.`,
+      followUps: ['Where did my money go?', 'What bills are coming up?', 'Help me save money'],
+    };
+  }
+
+  return {
+    content: `I suggested holding off on **${formatCurrency(price)}** because your **safe-to-spend balance** is only **${formatCurrency(stats.safeBalance)}**.\n\nThat purchase would exceed it by **${formatCurrency(price - stats.safeBalance)}**, leaving you short for bills or essentials already counted in that balance.\n\n**Safe balance** = income minus paid expenses minus upcoming bills this month.`,
+    followUps: ['What bills are coming up?', 'How can I save more?', 'Show my biggest expenses'],
+  };
 }
 
 function streamText(text, onChunk, onDone) {
@@ -20,23 +83,24 @@ function streamText(text, onChunk, onDone) {
   return () => clearInterval(interval);
 }
 
-export function generateFinancialResponse(question, data, monthKey) {
+export function generateFinancialResponse(question, data, monthKey, previousMessages = []) {
   const q = question.toLowerCase().trim();
   const stats = getDashboardStats(data, monthKey);
   const insights = buildAIInsights(data, monthKey);
   const prevMonth = shiftMonthKey(monthKey, -1);
-  const prevSpending = getCategorySpending(data.transactions, prevMonth);
+  const prevSpending = getCategorySpending(data.transactions, prevMonth, data.debts);
   const monthLabel = getMonthName(monthKey);
 
-  if (/afford|can i buy|can i get/.test(q)) {
+  if (/why|explain|how come|what reason|tell me more|hold off/.test(q)) {
+    const price = findAffordabilityAmount(q, previousMessages);
+    if (price != null) {
+      return explainAffordability(price, stats);
+    }
+  }
+
+  if (/afford|can i buy|can i get|can i spend|should i buy/.test(q)) {
     const price = extractAmount(q) || 999;
-    const ok = stats.safeBalance >= price;
-    return {
-      content: ok
-        ? `Yes — you can afford **${formatCurrency(price)}** this month.\n\nYour safe-to-spend balance is **${formatCurrency(stats.safeBalance)}** after expenses and upcoming bills.\n\nYou'd still have **${formatCurrency(stats.safeBalance - price)}** left.`
-        : `I'd hold off on **${formatCurrency(price)}** right now.\n\nYour safe-to-spend balance is **${formatCurrency(stats.safeBalance)}**, which is **${formatCurrency(price - stats.safeBalance)}** short.\n\nConsider waiting until after your next income or reducing discretionary spending.`,
-      followUps: ['How can I save more?', 'Show my biggest expenses', 'What bills are coming up?'],
-    };
+    return explainAffordability(price, stats);
   }
 
   if (/where did my money|spending this month|money go/.test(q)) {
@@ -50,7 +114,31 @@ export function generateFinancialResponse(question, data, monthKey) {
     };
   }
 
+  if (/how much.*save|can i save|amount.*save|save.*(?:this|each|per)\s*month|much can i put aside|leftover|left over/.test(q)) {
+    const statedSalary = extractSalaryFromQuestion(q);
+    return explainSavingsCapacity(
+      stats,
+      insights,
+      monthLabel,
+      data,
+      monthKey,
+      statedSalary
+    );
+  }
+
   if (/save|cut back|reduce spending/.test(q)) {
+    const statedSalary = extractSalaryFromQuestion(q);
+    if (statedSalary != null) {
+      return explainSavingsCapacity(
+        stats,
+        insights,
+        monthLabel,
+        data,
+        monthKey,
+        statedSalary
+      );
+    }
+
     const target = extractAmount(q) || 500;
     const cat = insights.topCategory;
     return {
@@ -104,7 +192,7 @@ export function generateFinancialResponse(question, data, monthKey) {
 
   if (/report|summary|overview/.test(q)) {
     return {
-      content: `**${monthLabel} Financial Report**\n\n- **Income:** ${formatCurrency(stats.salary)}\n- **Expenses:** ${formatCurrency(stats.totalExpenses)}\n- **Safe balance:** ${formatCurrency(stats.safeBalance)}\n- **Upcoming bills:** ${formatCurrency(stats.upcomingDebt)}\n- **Health score:** ${insights.healthScore}/100\n\n**Top category:** ${insights.topCategory} (${formatCurrency(insights.topCategoryAmount)})`,
+      content: `**${monthLabel} Financial Report**\n\n- **Income:** ${formatCurrency(stats.salary)}\n- **Expenses (paid):** ${formatCurrency(stats.totalExpenses)}\n- **Upcoming bills** ([[unpaid]]): ${formatCurrency(stats.upcomingDebt)}\n- **Safe balance:** ${formatCurrency(stats.safeBalance)}\n- **Health score:** ${insights.healthScore}/100\n\n**Top category:** ${insights.topCategorySummary}`,
       followUps: ['Compare with last month', 'Help me save money', 'Upcoming bills'],
     };
   }
@@ -127,7 +215,7 @@ export function generateFinancialResponse(question, data, monthKey) {
   }
 
   return {
-    content: `I'm your financial assistant. I can help with:\n\n- **Affordability checks** — "Can I afford RM999?"\n- **Spending analysis** — "Where did my money go?"\n- **Savings plans** — "Help me save RM500"\n- **Budgets & reports** — "Plan my budget"\n\nYour safe-to-spend balance is **${formatCurrency(stats.safeBalance)}** this month.`,
+    content: `I'm **${AI_BRAND_SHORT}** (${AI_BRAND_NAME}). I can help with:\n\n- **Affordability checks** — "Can I afford RM999?"\n- **Spending analysis** — "Where did my money go?"\n- **Savings plans** — "Help me save RM500"\n- **Budgets & reports** — "Plan my budget"\n\nYour safe-to-spend balance is **${formatCurrency(stats.safeBalance)}** this month.`,
     followUps: [
       'Can I afford this?',
       'Where did my money go?',

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "vercel dev",
+    "dev:full": "vercel dev --listen 3005",
     "prebuild": "node scripts/check-serverless-count.js",
     "build": "vite build",
     "check:env": "node scripts/check-env.js",
@@ -13,9 +13,11 @@
     "test:deploy": "node test.js",
     "preview": "vite preview",
     "mongo:init": "node scripts/init-collections.js",
-    "mongo:migrate": "node scripts/migrate-split-collections.js"
+    "mongo:migrate": "node scripts/migrate-split-collections.js",
+    "mongo:migrate-savings": "node scripts/migrate-savings-entries.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@mdi/js": "^7.4.47",
     "@mdi/react": "^1.6.1",
     "@react-three/drei": "^9.122.0",
@@ -24,6 +26,7 @@
     "firebase-admin": "^14.2.0",
     "framer-motion": "^12.42.2",
     "mongodb": "^6.12.0",
+    "nanoid": "^6.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.4",

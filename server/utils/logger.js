@@ -1,0 +1,11 @@
+export const logger = {
+  warn(message, ...args) {
+    console.warn(message, ...args);
+  },
+  error(message, ...args) {
+    console.error(message, ...args);
+  },
+  info(message, ...args) {
+    console.info(message, ...args);
+  },
+};

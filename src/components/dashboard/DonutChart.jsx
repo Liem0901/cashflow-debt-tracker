@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import Card from '../ui/Card';
+import ShinyCoin from '../savings/ShinyCoin';
 import { formatCurrency } from '../../utils/formatters';
 import { METRIC_COLORS, METRIC_DIMS } from '../../theme/metricColors';
 
@@ -11,6 +13,24 @@ const SEGMENTS = {
 };
 
 const TRACK_COLOR = '#1a1a1a';
+
+function BreakdownHeader() {
+  return (
+    <div className="relative mb-3 pr-8">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
+        Breakdown
+      </h2>
+      <p className="mt-1 text-xs text-portfolio-gray">Where your money goes this month</p>
+      <Link
+        to="/savings"
+        className="absolute right-0 top-0"
+        aria-label="View savings"
+      >
+        <ShinyCoin size="sm" />
+      </Link>
+    </div>
+  );
+}
 
 function SegmentDetail({ entry }) {
   if (!entry) {
@@ -69,9 +89,7 @@ export default function DonutChart({ totalExpenses, upcomingDebt, safeBalance })
   if (total === 0) {
     return (
       <Card animate>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-          Breakdown
-        </h2>
+        <BreakdownHeader />
         <div className="flex h-52 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-portfolio-border bg-portfolio-elevated/40 text-sm text-portfolio-gray">
           <span className="flex h-12 w-12 items-center justify-center rounded-full border border-portfolio-border bg-portfolio-muted/50">
             <i className="bi bi-pie-chart text-lg text-portfolio-gray" aria-hidden="true" />
@@ -90,10 +108,7 @@ export default function DonutChart({ totalExpenses, upcomingDebt, safeBalance })
 
   return (
     <Card animate>
-      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
-        Breakdown
-      </h2>
-      <p className="mb-3 text-xs text-portfolio-gray">Where your money goes this month</p>
+      <BreakdownHeader />
 
       <div className="relative mx-auto h-56 w-full max-w-[280px]">
         <ResponsiveContainer width="100%" height="100%">

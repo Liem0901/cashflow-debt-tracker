@@ -5,12 +5,14 @@ import {
   generateId,
   normalizeBudgets,
 } from '../data/initialData';
-import { getCurrentMonthKey, todayISO } from '../utils/formatters';
+import { getCurrentMonthKey, todayISO, shiftMonthKey } from '../utils/formatters';
+import { utcNowIso, normalizeArchivedMonths } from '../utils/dates';
 import {
   getCashExpenses,
   getDashboardStats,
   getBaseSalaryForMonth,
 } from '../utils/calculations';
+import { normalizeSavingsData, applySavingsDeposit, applySavingsWithdraw } from '../utils/savings';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
 const AppContext = createContext(null);
@@ -26,45 +28,78 @@ function normalizeSalaryData(data) {
 
 function normalizeAppData(data) {
   const withSalary = normalizeSalaryData(data);
-  const budgets = normalizeBudgets(withSalary.budgets);
-  const hadHidden = Array.isArray(withSalary.hiddenBudgetCategories);
-  const budgetsChanged = budgets !== withSalary.budgets;
+  const withSavings = normalizeSavingsData(withSalary);
+  const withTimestamps = {
+    ...withSavings,
+    archivedMonths: normalizeArchivedMonths(withSavings.archivedMonths),
+  };
+  const budgets = normalizeBudgets(withTimestamps.budgets);
+  const hadHidden = Array.isArray(withTimestamps.hiddenBudgetCategories);
+  const budgetsChanged = budgets !== withTimestamps.budgets;
 
-  if (!hadHidden && !budgetsChanged) return withSalary;
+  if (!hadHidden && !budgetsChanged) return withTimestamps;
 
-  const { hiddenBudgetCategories: _removed, ...rest } = withSalary;
+  const { hiddenBudgetCategories: _removed, ...rest } = withTimestamps;
   return { ...rest, budgets };
 }
 
-function checkMonthReset(data) {
-  const currentMonth = getCurrentMonthKey();
-  if (data.currentMonth === currentMonth) return data;
+function advanceOneMonth(data) {
+  const todayMonth = getCurrentMonthKey();
+  if (data.currentMonth === todayMonth) return data;
 
-  const prevSalary = getBaseSalaryForMonth(data, data.currentMonth);
-  const salaryByMonth = { ...(data.salaryByMonth || {}) };
-  if (salaryByMonth[currentMonth] == null && prevSalary > 0) {
-    salaryByMonth[currentMonth] = prevSalary;
+  const closingMonth = data.currentMonth;
+  const nextMonth = shiftMonthKey(closingMonth, 1);
+  const prevStats = getDashboardStats(data, closingMonth);
+  const withAutoSave = applyAutoMonthEndSave(data, closingMonth, prevStats.safeBalance);
+
+  const prevSalary = getBaseSalaryForMonth(withAutoSave, closingMonth);
+  const salaryByMonth = { ...(withAutoSave.salaryByMonth || {}) };
+  if (salaryByMonth[nextMonth] == null && prevSalary > 0) {
+    salaryByMonth[nextMonth] = prevSalary;
   }
 
   const archived = {
-    month: data.currentMonth,
-    transactions: data.transactions,
-    debtsSnapshot: data.debts.map((d) => ({ ...d })),
-    cashExpenses: getCashExpenses(data.transactions, data.currentMonth),
+    month: closingMonth,
+    transactions: withAutoSave.transactions,
+    debtsSnapshot: withAutoSave.debts.map((d) => ({ ...d })),
+    cashExpenses: getCashExpenses(withAutoSave.transactions, closingMonth),
     salary: prevSalary,
-    archivedAt: new Date().toISOString(),
+    safeBalance: prevStats.safeBalance,
+    archivedAt: utcNowIso(),
   };
 
   return {
-    ...data,
-    currentMonth,
+    ...withAutoSave,
+    currentMonth: nextMonth,
     salaryByMonth,
-    archivedMonths: [...(data.archivedMonths || []), archived],
+    archivedMonths: [...(withAutoSave.archivedMonths || []), archived],
   };
 }
 
+function checkMonthReset(data) {
+  let next = data;
+  let guard = 0;
+
+  while (next.currentMonth !== getCurrentMonthKey() && guard < 24) {
+    next = advanceOneMonth(next);
+    guard += 1;
+  }
+
+  return next;
+}
+
 export function AppProvider({ children }) {
-  const { data, setData, loading, refreshing, refreshData, syncStatus, syncError } = useAppData();
+  const {
+    data,
+    setData,
+    loading,
+    refreshing,
+    refreshData,
+    syncStatus,
+    syncError,
+    cloudEnabled,
+    cloudSyncHint,
+  } = useAppData();
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(todayISO);
   const [addTransactionModal, setAddTransactionModal] = useState(null);
 
@@ -292,6 +327,28 @@ export function AppProvider({ children }) {
     setData(createInitialData(), { immediate: true });
   }, [setData]);
 
+  const depositSavings = useCallback(
+    (amount, note) => {
+      setData((prev) => applySavingsDeposit(normalizeSavingsData(prev), amount, note));
+    },
+    [setData]
+  );
+
+  const withdrawSavings = useCallback(
+    (amount, note) => {
+      setData((prev) => applySavingsWithdraw(normalizeSavingsData(prev), amount, note));
+    },
+    [setData]
+  );
+
+  const updateSavingsGoal = useCallback(
+    (goal) => {
+      const value = Math.max(1, Number(goal) || 5000);
+      setData((prev) => ({ ...prev, savingsGoal: value }));
+    },
+    [setData]
+  );
+
   const openAddTransaction = useCallback((options = {}) => {
     setAddTransactionModal({
       mode: options.mode || 'cash',
@@ -315,6 +372,8 @@ export function AppProvider({ children }) {
       closeAddTransaction,
       syncStatus,
       syncError,
+      cloudEnabled,
+      cloudSyncHint,
       refreshing,
       refreshData,
       updateSalary,
@@ -331,6 +390,9 @@ export function AppProvider({ children }) {
       exportData,
       importData,
       clearData,
+      depositSavings,
+      withdrawSavings,
+      updateSavingsGoal,
     }),
     [
       data,
@@ -343,6 +405,8 @@ export function AppProvider({ children }) {
       closeAddTransaction,
       syncStatus,
       syncError,
+      cloudEnabled,
+      cloudSyncHint,
       refreshing,
       refreshData,
       updateSalary,
@@ -359,6 +423,9 @@ export function AppProvider({ children }) {
       exportData,
       importData,
       clearData,
+      depositSavings,
+      withdrawSavings,
+      updateSavingsGoal,
     ]
   );
 

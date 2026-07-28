@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-  const { syncStatus, syncError } = useApp();
+  const { syncStatus, syncError, cloudSyncHint } = useApp();
   const { isLocalOnly, isGuest } = useAuth();
 
   return (
@@ -15,7 +15,13 @@ export default function Profile() {
         <p className="text-sm text-portfolio-gray">Account & sync settings</p>
       </header>
 
-      <SyncStatus status={syncStatus} syncError={syncError} isLocalOnly={isLocalOnly} isGuest={isGuest} />
+      <SyncStatus
+        status={syncStatus}
+        syncError={syncError}
+        isLocalOnly={isLocalOnly}
+        isGuest={isGuest}
+        cloudSyncHint={cloudSyncHint}
+      />
 
       <AccountSettings />
       <AppFooter />

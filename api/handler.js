@@ -1,5 +1,6 @@
-import { handleUserData } from '../server/routes/userData.js';
-import { handleAdmin } from '../server/routes/admin.js';
+import { handleUserData } from '../server/routes/userRoutes.js';
+import { handleAdmin } from '../server/routes/adminRoutes.js';
+import { handleAiChat } from '../server/routes/aiRoutes.js';
 
 function getPath(req) {
   const raw = req.query.path;
@@ -18,6 +19,10 @@ export default async function handler(req, res) {
 
   if (root === 'admin') {
     return handleAdmin(req, res, rest);
+  }
+
+  if (root === 'ai' && rest[0] === 'chat') {
+    return handleAiChat(req, res);
   }
 
   return res.status(404).json({ error: 'Not found' });

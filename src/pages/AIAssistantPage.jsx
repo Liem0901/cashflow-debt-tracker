@@ -1,13 +1,24 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useChatHistory } from '../hooks/useChatHistory';
+import { hasChatHistory } from '../utils/chatStorage';
 import AIAssistantHeader from '../components/ai/AIAssistantHeader';
 import AILandingHero from '../components/ai/AILandingHero';
 import ChatInterface from '../components/ai/ChatInterface';
 
 export default function AIAssistantPage() {
-  const [conversationStarted, setConversationStarted] = useState(false);
+  const { user } = useAuth();
+  const userId = user?.uid || 'default-user';
+  const chat = useChatHistory(userId);
+  const [conversationStarted, setConversationStarted] = useState(() => hasChatHistory(userId));
   const [prompt, setPrompt] = useState(null);
-  const [chatKey, setChatKey] = useState(0);
   const promptSent = useRef(false);
+
+  useEffect(() => {
+    setConversationStarted(hasChatHistory(userId));
+    promptSent.current = false;
+    setPrompt(null);
+  }, [userId]);
 
   const handleQuickAction = (label) => {
     if (promptSent.current) return;
@@ -18,9 +29,13 @@ export default function AIAssistantPage() {
 
   const handleNewChat = () => {
     promptSent.current = false;
+    chat.clearChat();
     setConversationStarted(false);
     setPrompt(null);
-    setChatKey((k) => k + 1);
+  };
+
+  const handleConversationStart = () => {
+    setConversationStarted(true);
   };
 
   return (
@@ -31,10 +46,13 @@ export default function AIAssistantPage() {
 
       <div className={conversationStarted ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0'}>
         <ChatInterface
-          key={chatKey}
           mode={conversationStarted ? 'active' : 'landing'}
-          onConversationStart={() => setConversationStarted(true)}
+          onConversationStart={handleConversationStart}
           initialPrompt={prompt}
+          messages={chat.messages}
+          setMessages={chat.setMessages}
+          followUps={chat.followUps}
+          setFollowUps={chat.setFollowUps}
         />
       </div>
     </div>

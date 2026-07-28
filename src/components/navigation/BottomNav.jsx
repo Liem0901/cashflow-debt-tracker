@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { AI_BRAND_NAME, AI_BRAND_SHORT } from '../../constants/aiBrand';
 
 const tabs = [
   {
@@ -14,7 +15,7 @@ const tabs = [
   },
   {
     to: '/ai',
-    label: 'AI',
+    label: AI_BRAND_SHORT,
     center: true,
     icon: 'bi bi-stars',
   },
@@ -36,7 +37,7 @@ function NavItem({ tab }) {
       <NavLink
         to={tab.to}
         className="relative flex h-full flex-col items-center justify-center"
-        aria-label="AI Assistant"
+        aria-label={AI_BRAND_NAME}
       >
         {({ isActive: active }) => (
           <>

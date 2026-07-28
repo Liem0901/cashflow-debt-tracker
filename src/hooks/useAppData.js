@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createInitialData, getStorageKey } from '../data/initialData';
 import { fetchUserData, saveUserData } from '../services/apiData';
 import { useAuth } from '../context/AuthContext';
 import { isLocalOnly } from '../lib/firebase';
 
 const SAVE_DEBOUNCE_MS = 800;
+const LOCAL_SAVED_FLASH_MS = 2500;
 
 function readLocalStorage(userId) {
   try {
@@ -82,6 +83,17 @@ export function useAppData() {
   const cloudEnabled =
     isFirebaseConfigured && !isLocalOnly && !isGuest && Boolean(user);
 
+  const cloudSyncHint = useMemo(() => {
+    if (cloudEnabled) return '';
+    if (!isFirebaseConfigured) return 'Add VITE_FIREBASE_* keys to .env and restart dev:full.';
+    if (isLocalOnly) {
+      return 'Cloud sync is off. Set VITE_LOCAL_ONLY=false in .env, restart dev:full, hard-refresh.';
+    }
+    if (isGuest) return 'Guest mode — sign in with Google or email on Profile to sync.';
+    if (!user) return 'Sign in to sync across devices.';
+    return '';
+  }, [cloudEnabled, isFirebaseConfigured, isGuest, isLocalOnly, user]);
+
   const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,8 +101,23 @@ export function useAppData() {
   const [syncError, setSyncError] = useState('');
 
   const saveTimerRef = useRef(null);
+  const localSavedTimerRef = useRef(null);
+  const localSaveFlashRef = useRef(null);
   const isHydratingRef = useRef(true);
   const refreshingRef = useRef(false);
+
+  const flashLocalSaved = useCallback(() => {
+    setSyncStatus('saved-local');
+    clearTimeout(localSavedTimerRef.current);
+    localSavedTimerRef.current = setTimeout(() => {
+      setSyncStatus((current) => (current === 'saved-local' ? 'local' : current));
+    }, LOCAL_SAVED_FLASH_MS);
+  }, []);
+
+  const scheduleLocalSaveFlash = useCallback(() => {
+    clearTimeout(localSaveFlashRef.current);
+    localSaveFlashRef.current = setTimeout(() => flashLocalSaved(), SAVE_DEBOUNCE_MS);
+  }, [flashLocalSaved]);
 
   const persistToCloud = useCallback(
     async (payload, immediate = false) => {
@@ -102,13 +129,13 @@ export function useAppData() {
         try {
           const result = await saveUserData(userId, payload, getIdToken);
           if (result.offline) {
-            setSyncStatus('local');
+            flashLocalSaved();
           } else {
             setSyncStatus('synced');
           }
         } catch (error) {
           console.warn('Cloud save failed:', error);
-          setSyncStatus('error');
+          flashLocalSaved();
           setSyncError(error.message || 'Sync failed');
         }
       };
@@ -122,7 +149,7 @@ export function useAppData() {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(runSave, SAVE_DEBOUNCE_MS);
     },
-    [cloudEnabled, getIdToken, userId]
+    [cloudEnabled, flashLocalSaved, getIdToken, userId]
   );
 
   const setData = useCallback(
@@ -131,11 +158,15 @@ export function useAppData() {
         const next = typeof value === 'function' ? value(prev) : value;
         if (next === prev) return prev;
         writeLocalStorage(userId, next);
-        persistToCloud(next, options.immediate);
+        if (!cloudEnabled) {
+          scheduleLocalSaveFlash();
+        } else {
+          persistToCloud(next, options.immediate);
+        }
         return next;
       });
     },
-    [persistToCloud, userId]
+    [cloudEnabled, persistToCloud, scheduleLocalSaveFlash, userId]
   );
 
   const refreshData = useCallback(async () => {
@@ -180,8 +211,20 @@ export function useAppData() {
     return () => {
       cancelled = true;
       clearTimeout(saveTimerRef.current);
+      clearTimeout(localSavedTimerRef.current);
+      clearTimeout(localSaveFlashRef.current);
     };
   }, [userId, cloudEnabled, getIdToken]);
 
-  return { data, setData, loading, refreshing, refreshData, syncStatus, syncError };
+  return {
+    data,
+    setData,
+    loading,
+    refreshing,
+    refreshData,
+    syncStatus,
+    syncError,
+    cloudEnabled,
+    cloudSyncHint,
+  };
 }

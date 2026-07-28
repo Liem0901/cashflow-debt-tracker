@@ -7,7 +7,6 @@ import {
   mdiCashPlus,
   mdiSwapHorizontal,
   mdiCheckCircleOutline,
-  mdiCameraOutline,
   mdiPlus,
 } from '@mdi/js';
 import { useApp } from '../../context/AppContext';
@@ -47,13 +46,6 @@ const ACTIONS = [
     description: 'Pay down an existing debt',
     href: '/debts?action=pay',
     icon: <MdiIcon path={mdiCheckCircleOutline} />,
-  },
-  {
-    id: 'scan',
-    title: 'Scan Receipt',
-    description: 'Fast scan and save records',
-    future: true,
-    icon: <MdiIcon path={mdiCameraOutline} />,
   },
 ];
 
