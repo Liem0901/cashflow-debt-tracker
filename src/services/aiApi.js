@@ -1,3 +1,5 @@
+import { parseFetchResponse } from '../utils/apiResponse.js';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 export class AiApiError extends Error {
@@ -23,21 +25,7 @@ async function buildHeaders(getIdToken) {
 }
 
 async function parseApiResponse(response) {
-  const contentType = response.headers.get('content-type') || '';
-  const bodyText = await response.text();
-
-  if (!contentType.includes('application/json')) {
-    throw new AiApiError('Unexpected API response — is the server running?', {
-      status: response.status,
-      fallback: true,
-    });
-  }
-
-  try {
-    return JSON.parse(bodyText);
-  } catch {
-    throw new AiApiError('Invalid API response', { status: response.status, fallback: true });
-  }
+  return parseFetchResponse(response, AiApiError, { fallback: true });
 }
 
 export async function sendAiChat({ messages, context, getIdToken }) {

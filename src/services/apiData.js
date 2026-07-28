@@ -1,4 +1,12 @@
+import {
+  parseApiBody,
+  isTransientHtmlResponse,
+  sleep,
+} from '../utils/apiResponse.js';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_RETRY_ATTEMPTS = 3;
+const API_RETRY_DELAY_MS = 1200;
 
 function isValidAppData(data) {
   return data && Array.isArray(data.transactions) && Array.isArray(data.debts);
@@ -25,28 +33,23 @@ async function buildHeaders(getIdToken) {
   return headers;
 }
 
-async function parseApiResponse(response) {
-  const contentType = response.headers.get('content-type') || '';
-  const bodyText = await response.text();
+async function fetchApi(path, options) {
+  for (let attempt = 0; attempt < API_RETRY_ATTEMPTS; attempt += 1) {
+    const response = await fetch(`${API_BASE}${path}`, options);
+    const bodyText = await response.text();
 
-  if (!contentType.includes('application/json')) {
-    if (bodyText.startsWith('import ') || bodyText.includes('export default')) {
-      throw new ApiSyncError(
-        'API not running — use npm run dev:full and open that URL (not npm run dev)',
-        { status: response.status }
-      );
+    if (isTransientHtmlResponse(bodyText) && attempt < API_RETRY_ATTEMPTS - 1) {
+      await sleep(API_RETRY_DELAY_MS);
+      continue;
     }
 
-    throw new ApiSyncError('Unexpected API response — is the server running?', {
-      status: response.status,
-    });
+    const payload = parseApiBody(bodyText, ApiSyncError, { status: response.status });
+    return { response, payload };
   }
 
-  try {
-    return JSON.parse(bodyText);
-  } catch {
-    throw new ApiSyncError('Invalid API response', { status: response.status });
-  }
+  throw new ApiSyncError(
+    'API unavailable after retries — on production, cold starts can take a moment; refresh to retry'
+  );
 }
 
 function mapHttpError(status, payload) {
@@ -73,16 +76,15 @@ export async function fetchUserData(userId, getIdToken) {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/data`, {
+    const headers = await buildHeaders(getIdToken);
+    const { response, payload } = await fetchApi('/api/data', {
       method: 'GET',
-      headers: await buildHeaders(getIdToken),
+      headers,
     });
 
-    if (response.status === 503) {
+    if (response.status === 503 || response.status === 504) {
       return { data: null, offline: true };
     }
-
-    const payload = await parseApiResponse(response);
 
     if (!response.ok) {
       throw mapHttpError(response.status, payload);
@@ -121,17 +123,16 @@ export async function saveUserData(userId, data, getIdToken) {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/data`, {
+    const headers = await buildHeaders(getIdToken);
+    const { response, payload } = await fetchApi('/api/data', {
       method: 'PUT',
-      headers: await buildHeaders(getIdToken),
+      headers,
       body: JSON.stringify({ data }),
     });
 
-    if (response.status === 503) {
+    if (response.status === 503 || response.status === 504) {
       return { ok: false, offline: true };
     }
-
-    const payload = await parseApiResponse(response);
 
     if (!response.ok) {
       throw mapHttpError(response.status, payload);

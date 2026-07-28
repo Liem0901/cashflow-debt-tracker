@@ -1,6 +1,5 @@
 import { verifyAuthTokenFull } from '../config/firebase.js';
 import { getDb } from '../config/mongodb.js';
-import { ensureIndexes } from '../config/dbIndexes.js';
 import { AdminRepository } from '../repositories/adminRepository.js';
 import { AppConfigRepository } from '../repositories/appConfigRepository.js';
 import { AuditLogRepository } from '../repositories/auditLogRepository.js';
@@ -59,8 +58,6 @@ export async function requireAdmin(req, res) {
   return identity;
 }
 
-let indexesReady = false;
-
 export async function withAdminContext(req, res, handler) {
   setAdminCors(res);
 
@@ -80,11 +77,6 @@ export async function withAdminContext(req, res, handler) {
 
   try {
     const db = await getDb();
-
-    if (!indexesReady) {
-      await ensureIndexes(db);
-      indexesReady = true;
-    }
 
     const ctx = {
       admin,

@@ -11,17 +11,39 @@ setupMongoDns(uri);
 
 const globalWithMongo = globalThis;
 
+const MONGO_OPTIONS = {
+  maxPoolSize: 10,
+  minPoolSize: 0,
+  maxIdleTimeMS: 10000,
+  serverSelectionTimeoutMS: 8000,
+  connectTimeoutMS: 8000,
+  socketTimeoutMS: 15000,
+};
+
+function createClientPromise() {
+  const client = new MongoClient(uri, MONGO_OPTIONS);
+  return client.connect().catch((error) => {
+    globalWithMongo._mongoClientPromise = null;
+    throw error;
+  });
+}
+
 if (uri && !globalWithMongo._mongoClientPromise) {
-  const client = new MongoClient(uri);
-  globalWithMongo._mongoClientPromise = client.connect();
+  globalWithMongo._mongoClientPromise = createClientPromise();
 }
 
 export async function getDb() {
   if (!uri) {
     throw new Error('MONGODB_URI not configured');
   }
-  const client = await globalWithMongo._mongoClientPromise;
-  return client.db('cashflow');
+
+  try {
+    const client = await globalWithMongo._mongoClientPromise;
+    return client.db('cashflow');
+  } catch (error) {
+    globalWithMongo._mongoClientPromise = null;
+    throw error;
+  }
 }
 
 export function getUserId() {

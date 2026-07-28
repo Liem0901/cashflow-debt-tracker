@@ -76,3 +76,7 @@ console.log('  1. VITE_LOCAL_ONLY=false');
 console.log('  2. npm run dev:full running, open http://localhost:3005');
 console.log('  3. Signed in with Google/email (NOT Guest)');
 console.log('  4. Server Firebase + MongoDB OK (above)');
+console.log('');
+console.log('Production (Vercel):');
+console.log('  - MongoDB Atlas → Network Access must allow 0.0.0.0/0 (Vercel uses dynamic IPs)');
+console.log('  - Run npm run mongo:init once after schema changes (indexes are not created per request)');

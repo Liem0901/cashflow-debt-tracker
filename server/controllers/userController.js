@@ -1,5 +1,4 @@
 import { getDb } from '../config/mongodb.js';
-import { ensureIndexes } from '../config/dbIndexes.js';
 import { toUtcIso } from '../utils/dates.js';
 import { validateAppData } from '../schemas/appDataSchema.js';
 import { AppDataService } from '../services/appDataService.js';
@@ -10,16 +9,8 @@ import {
 } from '../middleware/authMiddleware.js';
 import { withErrorHandling } from '../middleware/errorMiddleware.js';
 
-let indexesReady = false;
-
 async function getAppDataService() {
   const db = await getDb();
-
-  if (!indexesReady) {
-    await ensureIndexes(db);
-    indexesReady = true;
-  }
-
   return new AppDataService(db);
 }
 
