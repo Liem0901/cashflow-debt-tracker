@@ -22,17 +22,13 @@ function ProtectedRoute({ children }) {
 
 function LoginRoute() {
   const { user, loading, isAuthBypassed } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (!isAuthBypassed && user) {
-    const redirectTo = location.state?.from && location.state.from !== '/login'
-      ? location.state.from
-      : '/';
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <LoginPage />;

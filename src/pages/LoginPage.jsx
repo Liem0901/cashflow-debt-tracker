@@ -1,24 +1,56 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
 export default function LoginPage() {
-  const { signInWithGoogle, signInAsGuest, error, isFirebaseConfigured, isLocalOnly, setError } =
-    useAuth();
-  const [name, setName] = useState('');
-  const [signingIn, setSigningIn] = useState(false);
+  const {
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    signInAsGuest,
+    error,
+    isFirebaseConfigured,
+    setError,
+  } = useAuth();
+  const navigate = useNavigate();
+
+  const [mode, setMode] = useState('signin'); // signin | signup
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [showGuest, setShowGuest] = useState(false);
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    const ok =
+      mode === 'signup'
+        ? await signUpWithEmail(email, password)
+        : await signInWithEmail(email, password);
+
+    setBusy(false);
+    if (ok) navigate('/', { replace: true });
+  };
+
+  const handleGoogleSignIn = async () => {
+    setBusy(true);
+    setError(null);
+    const ok = await signInWithGoogle();
+    setBusy(false);
+    if (ok) navigate('/', { replace: true });
+  };
 
   const handleGuestSignIn = (e) => {
     e.preventDefault();
     setError(null);
-    signInAsGuest(name);
-  };
-
-  const handleGoogleSignIn = async () => {
-    setSigningIn(true);
-    await signInWithGoogle();
-    setSigningIn(false);
+    if (signInAsGuest(guestName)) {
+      navigate('/', { replace: true });
+    }
   };
 
   return (
@@ -37,26 +69,72 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleGuestSignIn} className="space-y-3">
-          <Input
-            label="Your name"
-            type="text"
-            placeholder="e.g. William"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            required
-          />
-          <Button type="submit" size="lg" className="w-full">
-            Continue as Guest
-          </Button>
-          <p className="text-center text-xs text-portfolio-gray">
-            Guest mode saves data on this device only.
-          </p>
-        </form>
-
-        {isFirebaseConfigured && (
+        {isFirebaseConfigured ? (
           <>
+            <form onSubmit={handleEmailAuth} className="space-y-3">
+              <Input
+                label="Email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                autoFocus
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                minLength={6}
+                required
+              />
+              <Button type="submit" size="lg" className="mt-1 w-full" disabled={busy}>
+                {busy
+                  ? mode === 'signup'
+                    ? 'Creating account…'
+                    : 'Signing in…'
+                  : mode === 'signup'
+                    ? 'Create account'
+                    : 'Sign in'}
+              </Button>
+            </form>
+
+            <p className="mt-3 text-center text-xs text-portfolio-gray">
+              {mode === 'signup' ? (
+                <>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    className="font-medium text-white underline-offset-2 hover:underline"
+                    onClick={() => {
+                      setMode('signin');
+                      setError(null);
+                    }}
+                  >
+                    Sign in
+                  </button>
+                </>
+              ) : (
+                <>
+                  New here?{' '}
+                  <button
+                    type="button"
+                    className="font-medium text-white underline-offset-2 hover:underline"
+                    onClick={() => {
+                      setMode('signup');
+                      setError(null);
+                    }}
+                  >
+                    Create an account
+                  </button>
+                </>
+              )}
+            </p>
+
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-portfolio-border" />
               <span className="text-xs text-portfolio-gray">or</span>
@@ -69,7 +147,7 @@ export default function LoginPage() {
               variant="secondary"
               className="flex w-full items-center justify-center gap-3"
               onClick={handleGoogleSignIn}
-              disabled={signingIn}
+              disabled={busy}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
                 <path
@@ -89,15 +167,46 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              {signingIn ? 'Signing in…' : 'Continue with Google'}
+              {busy ? 'Signing in…' : 'Continue with Google'}
             </Button>
-            <p className="mt-2 text-center text-xs text-portfolio-gray">
-              {isLocalOnly
-                ? 'Google sign-in only — data stays on this device.'
-                : 'Google syncs your data to the cloud.'}
-            </p>
           </>
+        ) : (
+          <p className="rounded-xl border border-white/20 bg-portfolio-card px-3 py-2 text-center text-xs text-portfolio-gray">
+            Firebase is not configured. Use guest mode below, or set VITE_FIREBASE_* in .env.
+          </p>
         )}
+
+        <div className="mt-3">
+          <button
+            type="button"
+            className="w-full text-center text-xs text-portfolio-gray underline-offset-2 hover:text-white hover:underline"
+            onClick={() => {
+              setShowGuest((open) => !open);
+              setError(null);
+            }}
+          >
+            {showGuest ? 'Hide guest option' : 'Continue as guest'}
+          </button>
+
+          {showGuest && (
+            <form onSubmit={handleGuestSignIn} className="mt-3 space-y-3">
+              <Input
+                label="Your name"
+                type="text"
+                placeholder="Full Name"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                required
+              />
+              <Button type="submit" size="lg" variant="outline" className="w-full">
+                Continue as Guest
+              </Button>
+              <p className="text-center text-xs text-portfolio-gray">
+                Guest mode saves data on this device only.
+              </p>
+            </form>
+          )}
+        </div>
 
         {error && (
           <p className="mt-3 rounded-xl border border-white/20 bg-portfolio-card px-3 py-2 text-center text-xs text-white">

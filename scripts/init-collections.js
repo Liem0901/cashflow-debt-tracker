@@ -36,12 +36,11 @@ function loadEnvFile(filePath) {
 }
 
 loadEnvFile(path.join(rootDir, '.env'));
-loadEnvFile(path.join(rootDir, '.env.local'));
 
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  console.error('MONGODB_URI is missing. Add it to .env or .env.local first.');
+  console.error('MONGODB_URI is missing. Add it to .env first.');
   process.exit(1);
 }
 

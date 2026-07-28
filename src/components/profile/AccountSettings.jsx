@@ -9,7 +9,22 @@ export default function AccountSettings() {
   const navigate = useNavigate();
   const showAdminLink = isAdminUser(user);
 
-  if (isAuthBypassed || !user) return null;
+  // Auth bypass has no session — nothing to sign out of
+  if (isAuthBypassed) {
+    return (
+      <Card>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-portfolio-gray">
+          Account
+        </h2>
+        <p className="text-sm text-portfolio-gray">
+          Auth bypass is on (`VITE_AUTH_BYPASS=true`). Turn it off in Vercel env to enable login and
+          sign out.
+        </p>
+      </Card>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <Card>
@@ -31,7 +46,7 @@ export default function AccountSettings() {
         )}
         <div className="min-w-0">
           <p className="truncate font-medium text-white">
-            {user.displayName || 'Google user'}
+            {user.displayName || (isGuest ? 'Guest' : 'Signed in')}
           </p>
           <p className="truncate text-xs text-portfolio-gray">
             {isGuest ? 'Guest · saved on this device' : user.email}

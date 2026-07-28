@@ -4,18 +4,7 @@ import { fileURLToPath } from 'url';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-const LOCAL_OVERRIDE_KEYS = new Set([
-  'MONGODB_URI',
-  'FIREBASE_PROJECT_ID',
-  'FIREBASE_CLIENT_EMAIL',
-  'FIREBASE_PRIVATE_KEY',
-  'FIREBASE_SERVICE_ACCOUNT',
-  'ADMIN_EMAILS',
-  'ADMIN_UIDS',
-  'DEFAULT_USER_ID',
-]);
-
-function loadEnvFile(filePath, { overrideKeys = false } = {}) {
+function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
 
   const content = fs.readFileSync(filePath, 'utf8');
@@ -39,7 +28,7 @@ function loadEnvFile(filePath, { overrideKeys = false } = {}) {
 
     value = value.replace(/\\n/g, '\n');
 
-    if (process.env[key] === undefined || (overrideKeys && LOCAL_OVERRIDE_KEYS.has(key))) {
+    if (process.env[key] === undefined) {
       process.env[key] = value;
     }
   }
@@ -47,7 +36,7 @@ function loadEnvFile(filePath, { overrideKeys = false } = {}) {
 
 let loaded = false;
 
-/** Load .env files for local vercel dev — serverless handlers don't always get .env.local. */
+/** Load .env for local vercel dev — serverless handlers don't always get it. */
 export function ensureLocalEnv() {
   if (loaded) return;
   loaded = true;
@@ -55,9 +44,6 @@ export function ensureLocalEnv() {
   if (process.env.VERCEL) return;
 
   loadEnvFile(path.join(rootDir, '.env'));
-  loadEnvFile(path.join(rootDir, '.env.development.local'), { overrideKeys: true });
-  loadEnvFile(path.join(rootDir, '.env.local'), { overrideKeys: true });
-
   stripInvalidServiceAccountJson();
 }
 

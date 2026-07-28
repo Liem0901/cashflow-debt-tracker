@@ -24,9 +24,7 @@ function loadEnvFile(filePath) {
   }
 }
 
-for (const file of ['.env', '.env.local', '.env.development.local']) {
-  loadEnvFile(path.join(root, file));
-}
+loadEnvFile(path.join(root, '.env'));
 
 const { isAuthConfigured } = await import('../server/lib/auth.js');
 
@@ -66,7 +64,7 @@ if (saProject && process.env.VITE_FIREBASE_PROJECT_ID && saProject !== process.e
 }
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_CLIENT_EMAIL) {
-  console.log('\nMissing server credentials. Add FIREBASE_SERVICE_ACCOUNT to .env.local');
+  console.log('\nMissing server credentials. Add FIREBASE_SERVICE_ACCOUNT or FIREBASE_* fields to .env');
 }
 
 try {

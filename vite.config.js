@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  assetsInclude: ['**/*.glb'],
   plugins: [
     react(),
     VitePWA({
@@ -79,6 +80,14 @@ export default defineConfig({
           if (id.includes('recharts') || id.includes('d3-')) return 'recharts';
           if (id.includes('framer-motion')) return 'framer-motion';
           if (
+            id.includes('three') ||
+            id.includes('@react-three') ||
+            id.includes('three-stdlib') ||
+            id.includes('three-mesh-bvh')
+          ) {
+            return 'three';
+          }
+          if (
             id.includes('react-dom') ||
             id.includes('react-router') ||
             id.includes('/react/')
@@ -92,7 +101,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_DEV_API_URL || 'http://127.0.0.1:3003',
+        target: process.env.VITE_DEV_API_URL || 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     },

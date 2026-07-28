@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "node scripts/prepare-vercel-env.js && vercel dev",
+    "dev:full": "vercel dev",
     "prebuild": "node scripts/check-serverless-count.js",
     "build": "vite build",
+    "check:env": "node scripts/check-env.js",
     "check:api": "node scripts/check-serverless-count.js",
+    "test:deploy": "node test.js",
     "preview": "vite preview",
     "mongo:init": "node scripts/init-collections.js",
     "mongo:migrate": "node scripts/migrate-split-collections.js"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.2.0",
     "framer-motion": "^12.42.2",
@@ -21,7 +25,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.4",
-    "recharts": "^2.13.3"
+    "recharts": "^2.13.3",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
@@ -34,6 +39,7 @@
   },
   "overrides": {
     "tar": "^7.5.22",
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^4.1.1",
+    "jose": "^4.15.9"
   }
 }

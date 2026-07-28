@@ -31,7 +31,7 @@ export const isLocalOnly =
 
 export const requiresAuth = isFirebaseConfigured && !isAuthBypassed;
 
-const app = isFirebaseConfigured && !isAuthBypassed ? initializeApp(firebaseConfig) : null;
+const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();

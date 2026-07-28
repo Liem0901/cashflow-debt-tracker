@@ -38,7 +38,7 @@ export async function requireAdmin(req, res) {
     const { emails, uids } = getAdminAllowlist();
     const hint =
       !emails.size && !uids.size
-        ? 'Set ADMIN_EMAILS or ADMIN_UIDS in server environment (e.g. .env.local, then restart npm run dev:full).'
+        ? 'Set ADMIN_EMAILS or ADMIN_UIDS in server environment (e.g. .env, then restart npm run dev:full).'
         : `Signed in as uid=${identity.uid}${identity.email ? ` email=${identity.email}` : ' (no email on token)'}. Add this to ADMIN_EMAILS or ADMIN_UIDS.`;
 
     res.status(403).json({ error: 'Forbidden — admin access required', hint });

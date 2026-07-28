@@ -30,13 +30,11 @@ function loadEnvFile(filePath) {
   }
 }
 
-for (const file of ['.env', '.env.local', '.env.development.local']) {
-  loadEnvFile(path.join(rootDir, file));
-}
+loadEnvFile(path.join(rootDir, '.env'));
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
-  console.error('MONGODB_URI is missing.');
+  console.error('MONGODB_URI is missing. Add it to .env first.');
   process.exit(1);
 }
 

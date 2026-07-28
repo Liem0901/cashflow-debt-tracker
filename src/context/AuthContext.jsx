@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import {
@@ -19,6 +21,29 @@ import {
 } from '../lib/guestAuth';
 
 const AuthContext = createContext(null);
+
+function mapAuthError(err) {
+  switch (err?.code) {
+    case 'auth/invalid-email':
+      return 'Enter a valid email address.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Incorrect email or password.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Sign in instead.';
+    case 'auth/weak-password':
+      return 'Password must be at least 6 characters.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Try again later.';
+    case 'auth/popup-closed-by-user':
+      return null;
+    default:
+      return err?.message || 'Sign in failed';
+  }
+}
 
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -54,17 +79,54 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = useCallback(async () => {
     if (!auth) {
-      setError('Google sign-in is unavailable. Continue as Guest instead.');
-      return;
+      setError(
+        isFirebaseConfigured
+          ? 'Google sign-in failed to start. Restart the dev server and try again.'
+          : 'Google sign-in is unavailable. Set VITE_FIREBASE_* in .env, or continue as Guest.'
+      );
+      return false;
     }
 
     setError(null);
     try {
       await signInWithPopup(auth, googleProvider);
+      return true;
     } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'Sign in failed');
-      }
+      const message = mapAuthError(err);
+      if (message) setError(message);
+      return false;
+    }
+  }, []);
+
+  const signInWithEmail = useCallback(async (email, password) => {
+    if (!auth) {
+      setError('Email sign-in is unavailable. Check Firebase configuration.');
+      return false;
+    }
+
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      return true;
+    } catch (err) {
+      setError(mapAuthError(err));
+      return false;
+    }
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email, password) => {
+    if (!auth) {
+      setError('Email sign-up is unavailable. Check Firebase configuration.');
+      return false;
+    }
+
+    setError(null);
+    try {
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      return true;
+    } catch (err) {
+      setError(mapAuthError(err));
+      return false;
     }
   }, []);
 
@@ -107,6 +169,8 @@ export function AuthProvider({ children }) {
       isLocalOnly,
       requiresAuth,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
       signInAsGuest,
       signOut,
       getIdToken,
@@ -118,6 +182,8 @@ export function AuthProvider({ children }) {
       loading,
       error,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
       signInAsGuest,
       signOut,
       getIdToken,
