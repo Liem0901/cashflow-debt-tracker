@@ -114,7 +114,7 @@ export default function FloatingActionButton() {
         ) : null}
       </AnimatePresence>
 
-      <div className="pointer-events-none fab-bottom fixed left-1/2 z-50 flex w-[min(32rem,calc(100vw-1.5rem))] -translate-x-1/2 justify-end px-2">
+      <div className="pointer-events-none fixed right-4 z-50 bottom-[calc(5.5rem+env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto flex flex-col items-end gap-2.5">
           <AnimatePresence mode="popLayout">
             {open ? (

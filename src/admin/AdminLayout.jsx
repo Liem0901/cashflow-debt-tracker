@@ -3,11 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/users', label: 'Users' },
-  { to: '/admin/transactions', label: 'Transactions' },
+  { to: '/admin', label: 'Users', end: true },
   { to: '/admin/categories', label: 'Categories' },
-  { to: '/admin/reports', label: 'Reports' },
 ];
 
 function SidebarLink({ to, label, end = false }) {

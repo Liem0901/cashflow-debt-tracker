@@ -104,19 +104,14 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="bottom-nav glass-nav fixed bottom-3 left-1/2 z-40 flex w-[min(32rem,calc(100vw-1.5rem))] -translate-x-1/2 flex-col overflow-visible rounded-3xl border border-white/10 shadow-nav"
+      className="bottom-nav safe-area-bottom fixed bottom-0 left-1/2 z-40 flex w-full max-w-lg -translate-x-1/2 flex-col overflow-visible border-t border-white/10 bg-portfolio-card/75 backdrop-blur-2xl"
       aria-label="Main navigation"
     >
-      <div className="bottom-nav-tabs grid min-h-0 flex-1 grid-cols-5 items-center px-1 py-2">
+      <div className="bottom-nav-tabs grid h-[4.5rem] grid-cols-5 items-center px-1 py-2">
         {tabs.map((tab) => (
           <NavItem key={tab.to} tab={tab} />
         ))}
       </div>
-      <div
-        className="shrink-0"
-        style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
-        aria-hidden
-      />
     </nav>
   );
 }

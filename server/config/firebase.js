@@ -77,10 +77,12 @@ export async function verifyAuthTokenFull(authHeader) {
     const decoded = await getAuth().verifyIdToken(token);
 
     let email = decoded.email || null;
-    if (!email) {
+    let name = decoded.name || null;
+    if (!email || !name) {
       try {
         const userRecord = await getAuth().getUser(decoded.uid);
-        email = userRecord.email || null;
+        email = email || userRecord.email || null;
+        name = name || userRecord.displayName || null;
       } catch {
         // ignore — uid-only allowlist may still apply
       }
@@ -89,10 +91,37 @@ export async function verifyAuthTokenFull(authHeader) {
     return {
       uid: decoded.uid,
       email,
-      name: decoded.name || null,
+      name,
     };
   } catch (error) {
     console.warn('Token verification failed:', error.code || error.message);
     return null;
+  }
+}
+
+/** Batch-resolve display names and emails for admin user listings. */
+export async function getAuthProfiles(uids) {
+  if (!isAuthConfigured() || !uids.length) return {};
+
+  try {
+    getAdminApp();
+    const result = await getAuth().getUsers(uids.map((uid) => ({ uid })));
+    const profiles = {};
+
+    for (const user of result.users) {
+      profiles[user.uid] = {
+        email: user.email || null,
+        name: user.displayName || user.email?.split('@')[0] || null,
+      };
+    }
+
+    for (const missing of result.notFound) {
+      profiles[missing.uid] = { email: null, name: null };
+    }
+
+    return profiles;
+  } catch (error) {
+    console.warn('Failed to fetch auth profiles:', error.code || error.message);
+    return {};
   }
 }

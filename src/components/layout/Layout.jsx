@@ -54,7 +54,7 @@ export default function Layout() {
           className={
             isAIPage
               ? 'flex h-[100dvh] flex-col overflow-hidden'
-              : 'min-h-[calc(100dvh-4rem)] pb-24'
+              : 'min-h-[calc(100dvh-4rem)] main-bottom-clearance'
           }
         >
           <Outlet />

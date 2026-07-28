@@ -171,13 +171,12 @@ export default function AddTransaction({ initialMode = 'cash', initialSource, on
 
       {mode === 'debt' && (
         <>
-          <Select label="Provider" value={provider} onChange={(e) => setProvider(e.target.value)}>
-            {DEBT_PROVIDERS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </Select>
+          <Select
+            label="Provider"
+            value={provider}
+            onChange={setProvider}
+            options={DEBT_PROVIDERS}
+          />
           <Input
             label="Date"
             type="date"

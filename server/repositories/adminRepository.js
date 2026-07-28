@@ -1,8 +1,28 @@
 import { COLLECTIONS } from '../config/collections.js';
+import { getAuthProfiles } from '../config/firebase.js';
 import { TransactionRepository } from './transactionRepository.js';
 import { DebtRepository } from './debtRepository.js';
 import { UserRepository } from './userRepository.js';
 import { AppDataService } from '../services/appDataService.js';
+
+function resolveDisplayName(profile, userId) {
+  if (profile?.name) return profile.name;
+  if (profile?.email) return profile.email.split('@')[0];
+  return userId.slice(0, 8);
+}
+
+async function enrichUsers(users) {
+  const profiles = await getAuthProfiles(users.map((user) => user.userId));
+
+  return users.map((user) => {
+    const profile = profiles[user.userId] || {};
+    return {
+      ...user,
+      email: profile.email || null,
+      name: resolveDisplayName(profile, user.userId),
+    };
+  });
+}
 
 async function summarizeUser(db, doc) {
   const userId = doc.userId;
@@ -56,9 +76,34 @@ export class AdminRepository {
 
   async listUsers({ search = '', page = 1, limit = 20, disabled = null } = {}) {
     const filter = {};
-    if (search) filter.userId = { $regex: search, $options: 'i' };
     if (disabled === 'true') filter.disabled = true;
     if (disabled === 'false') filter.disabled = { $ne: true };
+
+    const query = search.trim().toLowerCase();
+
+    if (query) {
+      const docs = await this.users.find(filter).sort({ updatedAt: -1 }).toArray();
+      const summarized = await Promise.all(docs.map((doc) => summarizeUser(this.db, doc)));
+      let users = await enrichUsers(summarized);
+
+      users = users.filter(
+        (user) =>
+          user.userId.toLowerCase().includes(query) ||
+          user.name.toLowerCase().includes(query) ||
+          (user.email && user.email.toLowerCase().includes(query))
+      );
+
+      const total = users.length;
+      const skip = (Math.max(1, page) - 1) * limit;
+      users = users.slice(skip, skip + limit);
+
+      return {
+        users,
+        total,
+        page: Math.max(1, page),
+        limit,
+      };
+    }
 
     const skip = (Math.max(1, page) - 1) * limit;
     const [docs, total] = await Promise.all([
@@ -66,7 +111,8 @@ export class AdminRepository {
       this.users.countDocuments(filter),
     ]);
 
-    const users = await Promise.all(docs.map((doc) => summarizeUser(this.db, doc)));
+    const summarized = await Promise.all(docs.map((doc) => summarizeUser(this.db, doc)));
+    const users = await enrichUsers(summarized);
 
     return {
       users,
@@ -83,8 +129,10 @@ export class AdminRepository {
     const loaded = await this.appData.load(userId);
     if (!loaded) return null;
 
+    const [summary] = await enrichUsers([await summarizeUser(this.db, doc)]);
+
     return {
-      ...(await summarizeUser(this.db, doc)),
+      ...summary,
       data: loaded.data,
     };
   }

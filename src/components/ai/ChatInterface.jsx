@@ -10,9 +10,9 @@ import { buildAIChatContext } from '../../utils/buildAIChatContext';
 import { AI_BRAND_NAME } from '../../constants/aiBrand';
 import ChatMessage from './ChatMessage';
 
-/** Bottom nav clearance + safe area */
+/** Bottom nav clearance: nav height (4.5rem) + safe area */
 const INPUT_BOTTOM =
-  'pb-[calc(env(safe-area-inset-bottom,0px)+5.75rem)]';
+  'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]';
 
 export default function ChatInterface({
   onConversationStart,

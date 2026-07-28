@@ -39,7 +39,7 @@ export default function AdminUserDetailPage() {
   const removeUser = async () => {
     if (!window.confirm(`Delete all data for ${userId}?`)) return;
     await deleteAdminUser(userId, getIdToken);
-    window.location.href = '/admin/users';
+    window.location.href = '/admin';
   };
 
   if (loading) return <p className="text-portfolio-gray">Loading user…</p>;
@@ -52,10 +52,12 @@ export default function AdminUserDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link to="/admin/users" className="text-sm text-sky-400 hover:underline">
+          <Link to="/admin" className="text-sm text-sky-400 hover:underline">
             ← Back to users
           </Link>
-          <h2 className="mt-2 break-all text-xl font-bold">{userId}</h2>
+          <h2 className="mt-2 text-xl font-bold">{user.name || userId}</h2>
+          {user.email ? <p className="text-sm text-portfolio-gray">{user.email}</p> : null}
+          <p className="mt-1 break-all text-xs text-portfolio-gray">{userId}</p>
           <p className="text-sm text-portfolio-gray">
             {user.disabled ? 'Disabled' : 'Active'} · Updated {user.updatedAt ? formatDate(String(user.updatedAt).slice(0, 10)) : '—'}
           </p>
