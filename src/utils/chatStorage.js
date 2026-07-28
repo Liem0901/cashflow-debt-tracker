@@ -1,39 +1,27 @@
 const CHAT_KEY_PREFIX = 'cashflow_ai_chat';
 export const MAX_STORED_CHAT_MESSAGES = 50;
 
+/** In-memory only — survives SPA navigation, clears on full page reload. */
+const memorySessions = new Map();
+
 export function getChatStorageKey(userId = 'default-user') {
   return `${CHAT_KEY_PREFIX}_${userId}`;
 }
 
 export function readChatSession(userId) {
-  try {
-    const raw = window.localStorage.getItem(getChatStorageKey(userId));
-    if (!raw) return { messages: [], followUps: [] };
-
-    const parsed = JSON.parse(raw);
-    return {
-      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
-      followUps: Array.isArray(parsed.followUps) ? parsed.followUps : [],
-    };
-  } catch {
-    return { messages: [], followUps: [] };
-  }
+  const key = getChatStorageKey(userId);
+  return memorySessions.get(key) ?? { messages: [], followUps: [] };
 }
 
 export function writeChatSession(userId, session) {
-  try {
-    window.localStorage.setItem(getChatStorageKey(userId), JSON.stringify(session));
-  } catch (error) {
-    console.warn('Chat history save failed:', error);
-  }
+  memorySessions.set(getChatStorageKey(userId), {
+    messages: Array.isArray(session.messages) ? session.messages : [],
+    followUps: Array.isArray(session.followUps) ? session.followUps : [],
+  });
 }
 
 export function clearChatSession(userId) {
-  try {
-    window.localStorage.removeItem(getChatStorageKey(userId));
-  } catch (error) {
-    console.warn('Chat history clear failed:', error);
-  }
+  memorySessions.delete(getChatStorageKey(userId));
 }
 
 export function hasChatHistory(userId) {

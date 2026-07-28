@@ -20,6 +20,12 @@ export default function AIAssistantPage() {
     setPrompt(null);
   }, [userId]);
 
+  useEffect(() => {
+    if (chat.messages.length > 0) {
+      setConversationStarted(true);
+    }
+  }, [chat.messages.length]);
+
   const handleQuickAction = (label) => {
     if (promptSent.current) return;
     promptSent.current = true;

@@ -2,6 +2,7 @@ import { validateAiChatRequest } from '../schemas/aiChatSchema.js';
 import { generateFinancialChat, isGeminiConfigured } from '../services/aiService.js';
 import { setAiCors, resolveUserId } from '../middleware/authMiddleware.js';
 import { withErrorHandling } from '../middleware/errorMiddleware.js';
+import { logger } from '../utils/logger.js';
 
 export async function postAiChat(req, res) {
   if (!isGeminiConfigured()) {
@@ -18,9 +19,23 @@ export async function postAiChat(req, res) {
   }
 
   const { messages, context } = req.body;
-  const result = await generateFinancialChat({ messages, context });
 
-  return res.status(200).json(result);
+  try {
+    const result = await generateFinancialChat({ messages, context });
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.code === 'AI_RATE_LIMITED') {
+      logger.warn('Gemini rate limit — falling back to offline replies', {
+        retryAfterSeconds: error.retryAfterSeconds,
+      });
+      return res.status(429).json({
+        error: 'Gemini rate limit reached',
+        fallback: true,
+        retryAfterSeconds: error.retryAfterSeconds ?? 60,
+      });
+    }
+    throw error;
+  }
 }
 
 export async function handleAiChat(req, res) {

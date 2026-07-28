@@ -4,6 +4,7 @@ import {
   writeChatSession,
   clearChatSession,
   toStoredMessages,
+  getChatStorageKey,
 } from '../utils/chatStorage';
 
 export function useChatHistory(userId) {
@@ -11,6 +12,12 @@ export function useChatHistory(userId) {
   const [followUps, setFollowUps] = useState(() => readChatSession(userId).followUps);
 
   useEffect(() => {
+    try {
+      window.localStorage.removeItem(getChatStorageKey(userId));
+    } catch {
+      // ignore legacy cleanup
+    }
+
     const session = readChatSession(userId);
     setMessages(session.messages);
     setFollowUps(session.followUps);

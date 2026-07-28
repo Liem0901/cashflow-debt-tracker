@@ -231,8 +231,8 @@ export function getDashboardStats(data, monthKey) {
   const cashExpenses = getCashExpenses(data.transactions, monthKey);
   const upcomingDebt = getUpcomingDebtTotal(data.debts, monthKey, data.transactions);
   const savingsSetAside = getMonthlyManualSavingsNet(data.savingsHistory, monthKey);
-  const safeBalance =
-    getSafeBalance(salary, 0, totalExpenses, upcomingDebt) - savingsSetAside;
+  const monthlyRemaining = getSafeBalance(salary, 0, totalExpenses, upcomingDebt);
+  const safeBalance = monthlyRemaining - savingsSetAside;
   const totalActiveDebt = getTotalActiveDebt(data.debts);
   const categorySpending = getCategorySpending(data.transactions, monthKey, data.debts);
   const debtsDueThisMonth = getUpcomingItemsThisMonth(
@@ -255,6 +255,7 @@ export function getDashboardStats(data, monthKey) {
     cashExpenses,
     totalExpenses,
     upcomingDebt,
+    monthlyRemaining,
     safeBalance,
     totalActiveDebt,
     categorySpending,

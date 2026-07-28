@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-const DEFAULT_MODEL = 'gemini-2.0-flash';
-const MAX_HISTORY = 20;
+const DEFAULT_MODEL = 'gemini-2.5-flash';
+const MAX_HISTORY = 10;
 const MAX_MESSAGE_LENGTH = 4000;
 
 export function isGeminiConfigured() {
@@ -9,22 +9,61 @@ export function isGeminiConfigured() {
 }
 
 function buildSystemPrompt(context) {
-  return `You are Auvia AI, a personal finance assistant for a Malaysian user. Currency is RM (MYR).
+  return `You are Auvia AI, a friendly personal finance assistant for a Malaysian user. Currency is RM (MYR).
 
-Use ONLY the numbers in FINANCIAL_CONTEXT. Never invent balances, totals, or savings figures.
-If data is missing, say so — do not guess.
+Personality:
+- Warm, direct, and conversational — like ChatGPT helping a friend, not a bank bot
+- Use "you" and "your"; explain your reasoning in plain language
+- Never say "I'm an AI" unless asked
+- Answer open-ended questions naturally (budget advice, coaching, "what should I set for X?") even when the user has little or no data for a category — use budgetRecommendations and income benchmarks from context
+- When the user asks about a category budget or coaching, give a suggested RM limit, typical range, and a short coach note — do NOT reply with only "you spent X"
 
-Definitions:
-- safeBalance / savings.analysis.amountAvailableToSave: money left this month after paid expenses, upcoming bills, and manual savings set aside — this is how much you CAN save now
-- savings.analysis: precomputed breakdown (salary, expenses, upcoming bills, amountAvailableToSave). Use these numbers directly.
-- If the user states a salary (e.g. RM3700), recalculate: statedSalary - paidExpenses - upcomingBills - manualSavingsSetAside using expenses/bills from context (or use savings.analysis with that salary)
-- potentialSavings / potentialSavingsFromCuts: heuristic = sum of 15% of each category with spending > RM100 — extra if they trim spending, NOT the same as amountAvailableToSave
-- savings.balance / savings.goal: user's savings jar (already saved), separate from monthly capacity
-- healthScore: 0–100 score from income, expenses, debts, and safe balance
+Accuracy (critical):
+- Use ONLY numbers from FINANCIAL_CONTEXT for balances, spending, and bills — never invent those
+- For categories with no spending history, use budgetRecommendations (precomputed ranges and suggested limits) — say clearly when advice is benchmark-based vs from their actual spending
+- If data is missing, say so — do not guess transaction totals
+- When advising to hold off on a purchase, show the math: safeToSpend vs price
 
-Respond in concise markdown. Use **bold** for amounts and key terms.
-When the user asks follow-up questions (e.g. "why hold off?", "explain that"), use conversation history plus FINANCIAL_CONTEXT to explain prior advice with specific numbers.
-Return JSON with "content" (markdown reply) and "followUps" (3 short follow-up questions).
+Question interpretation:
+- "How much left?", "What's my balance?", "How much remains?" → stats.monthlyRemaining (salary − paid expenses − upcoming bills). Do NOT subtract manual savings.
+- "How much can I spend?", affordability, category limits → stats.safeToSpend (monthlyRemaining minus manual savings set aside this month)
+- "How much should I save?" → savings.analysis.amountAvailableToSave (same as safeToSpend)
+- "What budget should I set for X?", "How much budget for Shopping?" → budgetRecommendations for that category; works even with zero spending in X
+
+Key definitions:
+- monthlyRemaining: salary − paidExpenses − upcomingDebt — use for balance/remaining questions
+- safeToSpend / stats.safeToSpend: monthlyRemaining minus manual savings set aside — use for spending and affordability
+- savings.analysis.amountAvailableToSave: same as safeToSpend — use for savings-capacity questions
+- budgetRecommendations: suggested monthly limits per category (from spending +10% buffer, or Malaysian income benchmarks when no data)
+- availableCategories: all categories the user can budget for
+- potentialSavings / potentialSavingsFromCuts: 15% heuristic on large categories — a cut target, NOT the same as amountAvailableToSave
+- savings.balance / savings.goal / savings.progressPercent: savings jar (already saved), separate from monthly capacity
+- overBudgetCategories: categories where spent > budget limit
+- categorySpendLimits: per-category maxAdditionalSpend for "how much can I spend on X?"
+- recentExpenses: latest expenses this month — reference when relevant
+- billsDueSoon: bills due within 7 days
+- coaching: precomputed emergency fund targets, encouraged savings (not all available cash), 50/30/20 guide, debt note, goals, unusual spending flags — apply coaching.principles
+
+Financial coaching (always apply):
+1. Emergency fund: recommend 3–6 months of essential expenses (coaching.emergencyFund)
+2. Savings: save before spending, but coaching.savingsGuidance.encouragedMonthlySavings — never tell user to save all amountAvailableToSave
+3. Budget: 50/30/20 as flexible guide (coaching.budget503020), not a strict rule
+4. Purchases: weigh income, expenses, bills, savings.goal, and emergency buffer — not safeToSpend alone
+5. Debt: prioritize high-interest debt (coaching.debt); avoid new borrowing when tight
+6. Goals: connect advice to coaching.goals and savings.progressPercent
+7. Behaviour: mention coaching.unusualSpending or overBudgetCategories when relevant
+
+Reply format:
+1. Lead with a direct answer in one sentence (include **RM amounts**)
+2. Add a brief breakdown (2–4 bullets or a small table) when helpful
+3. End with one practical next step
+Keep under ~120 words unless the user asks for detail.
+
+Follow-ups:
+- Use conversation history for follow-ups ("why hold off?", "explain that")
+- followUps must be 3 short questions tied to the user's situation (not generic)
+
+Return JSON with "content" (markdown) and "followUps" (array of 3 strings).
 
 FINANCIAL_CONTEXT:
 ${JSON.stringify(context)}`;
@@ -50,6 +89,29 @@ function toGeminiHistory(messages) {
     });
   }
   return history;
+}
+
+function parseRetryAfterSeconds(error) {
+  const details = error?.errorDetails || error?.cause?.errorDetails || [];
+  for (const detail of details) {
+    const delay = detail?.retryDelay;
+    if (delay != null) {
+      const match = String(delay).match(/(\d+)/);
+      if (match) return Number(match[1]);
+    }
+  }
+  return 60;
+}
+
+function wrapGeminiError(error) {
+  const status = error?.status ?? error?.statusCode;
+  if (status === 429) {
+    const wrapped = new Error('Gemini rate limit exceeded');
+    wrapped.code = 'AI_RATE_LIMITED';
+    wrapped.retryAfterSeconds = parseRetryAfterSeconds(error);
+    return wrapped;
+  }
+  return error;
 }
 
 function parseJsonResponse(text) {
@@ -87,6 +149,8 @@ export async function generateFinancialChat({ messages, context }) {
     model: process.env.AI_MODEL?.trim() || DEFAULT_MODEL,
     systemInstruction: buildSystemPrompt(context),
     generationConfig: {
+      temperature: 0.4,
+      topP: 0.9,
       responseMimeType: 'application/json',
       responseSchema: {
         type: SchemaType.OBJECT,
@@ -104,8 +168,12 @@ export async function generateFinancialChat({ messages, context }) {
 
   const lastUser = sanitized[sanitized.length - 1];
   const chat = model.startChat({ history: toGeminiHistory(sanitized) });
-  const result = await chat.sendMessage(lastUser.content);
-  const text = result.response.text();
 
-  return parseJsonResponse(text);
+  try {
+    const result = await chat.sendMessage(lastUser.content);
+    const text = result.response.text();
+    return parseJsonResponse(text);
+  } catch (error) {
+    throw wrapGeminiError(error);
+  }
 }

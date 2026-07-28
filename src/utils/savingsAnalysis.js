@@ -29,12 +29,15 @@ export function buildSavingsAnalysis(data, monthKey) {
     ...capacity,
     baseSalary: getBaseSalaryForMonth(data, monthKey),
     otherIncome: stats.otherIncome,
-    safeBalance: stats.safeBalance,
+    monthlyRemaining: stats.monthlyRemaining,
+    safeToSpend: stats.safeBalance,
     potentialSavingsFromCuts: insights.potentialSavings,
     potentialSavingsNote: 'Sum of 15% of each category with spending > RM100 — extra if you trim spending',
-    formula:
-      'amountAvailableToSave = salary - paidExpenses - upcomingBills - manualSavingsSetAsideThisMonth',
-    note: 'amountAvailableToSave equals safe-to-spend on the dashboard',
+    formulas: {
+      monthlyRemaining: 'salary - paidExpenses - upcomingBills',
+      safeToSpend: 'monthlyRemaining - manualSavingsSetAsideThisMonth',
+      amountAvailableToSave: 'same as safeToSpend',
+    },
   };
 }
 

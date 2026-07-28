@@ -50,9 +50,9 @@ export async function sendAiChat({ messages, context, getIdToken }) {
 
     const payload = await parseApiResponse(response);
 
-    if (response.status === 503 && payload?.fallback) {
-      throw new AiApiError(payload.message || 'AI not configured', {
-        status: 503,
+    if ((response.status === 503 || response.status === 429) && payload?.fallback) {
+      throw new AiApiError(payload.message || payload.error || 'AI temporarily unavailable', {
+        status: response.status,
         fallback: true,
       });
     }
@@ -60,7 +60,7 @@ export async function sendAiChat({ messages, context, getIdToken }) {
     if (!response.ok) {
       throw new AiApiError(payload?.error || `AI request failed (${response.status})`, {
         status: response.status,
-        fallback: response.status >= 500,
+        fallback: response.status >= 500 || response.status === 429,
       });
     }
 
