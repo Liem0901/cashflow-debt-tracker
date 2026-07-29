@@ -23,7 +23,7 @@ export default function Layout() {
       <Sidebar />
       <div className="mx-auto min-h-screen max-w-lg lg:mx-0 lg:max-w-none lg:flex-1">
         {!isAIPage ? (
-          <div className="app-top-bar px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] lg:hidden">
+          <div className="app-top-bar px-4 pb-3">
             <AppLogo />
             <SyncBadge />
           </div>

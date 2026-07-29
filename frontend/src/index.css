@@ -122,6 +122,18 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
+  .safe-area-top-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  }
+
+  .safe-area-top-header-compact {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  }
+
+  .app-top-bar {
+    @apply sticky top-0 z-30 border-b border-white/5 bg-black/40 backdrop-blur-xl safe-area-top-header lg:hidden;
+  }
+
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }

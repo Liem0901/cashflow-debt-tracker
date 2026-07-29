@@ -8,7 +8,7 @@ export default function AIAssistantHeader({ onNewChat, compact = false }) {
   return (
     <header
       className={`shrink-0 border-b border-portfolio-border/60 px-4 pb-3 ${
-        compact ? 'pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]' : 'pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]'
+        compact ? 'safe-area-top-header-compact' : 'safe-area-top-header'
       }`}
     >
       <div className="flex items-center justify-between gap-3">

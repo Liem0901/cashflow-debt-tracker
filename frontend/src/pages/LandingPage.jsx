@@ -70,7 +70,7 @@ export default function LandingPage() {
   return (
     <div className="landing-bg min-h-screen">
       <div className="landing-bg-content">
-      <nav className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 lg:px-12">
+      <nav className="safe-area-top-header flex items-center justify-between px-4 pb-4 sm:px-6 sm:pb-5 lg:px-12 lg:pt-5">
         <div className="flex items-center gap-2.5">
           <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-lg" aria-hidden />
           <span className="text-base font-bold text-white sm:text-lg">Cashflow Tracker</span>
