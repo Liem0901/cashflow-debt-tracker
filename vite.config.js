@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
   return {
   publicDir: 'frontend/public',
   assetsInclude: ['**/*.glb'],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   plugins: [
     react(),
     VitePWA({
@@ -84,8 +87,7 @@ export default defineConfig(({ mode }) => {
           if (id.includes('recharts') || id.includes('d3-')) return 'recharts';
           if (id.includes('framer-motion')) return 'framer-motion';
           if (
-            id.includes('three') ||
-            id.includes('@react-three') ||
+            id.includes('node_modules/three/') ||
             id.includes('three-stdlib') ||
             id.includes('three-mesh-bvh')
           ) {
@@ -94,6 +96,7 @@ export default defineConfig(({ mode }) => {
           if (
             id.includes('react-dom') ||
             id.includes('react-router') ||
+            id.includes('@react-three') ||
             id.includes('/react/')
           ) {
             return 'react-vendor';
