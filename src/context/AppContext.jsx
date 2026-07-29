@@ -93,6 +93,7 @@ export function AppProvider({ children }) {
     data,
     setData,
     loading,
+    hasCachedData,
     refreshing,
     refreshData,
     syncStatus,
@@ -429,7 +430,7 @@ export function AppProvider({ children }) {
     ]
   );
 
-  if (loading) {
+  if (loading && !hasCachedData) {
     return <LoadingScreen />;
   }
 

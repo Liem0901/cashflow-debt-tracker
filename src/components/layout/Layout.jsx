@@ -53,8 +53,8 @@ export default function Layout() {
         <main
           className={
             isAIPage
-              ? 'flex h-[100dvh] flex-col overflow-hidden'
-              : 'min-h-[calc(100dvh-4rem)] main-bottom-clearance'
+              ? 'flex h-[100dvh] flex-col overflow-hidden animate-fade-in'
+              : 'min-h-[calc(100dvh-4rem)] main-bottom-clearance animate-fade-in'
           }
         >
           <Outlet />

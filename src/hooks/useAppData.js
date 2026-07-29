@@ -96,6 +96,7 @@ export function useAppData() {
 
   const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
   const [loading, setLoading] = useState(true);
+  const [hasCachedData, setHasCachedData] = useState(() => readLocalStorage(userId) !== null);
   const [refreshing, setRefreshing] = useState(false);
   const [syncStatus, setSyncStatus] = useState('loading');
   const [syncError, setSyncError] = useState('');
@@ -191,6 +192,7 @@ export function useAppData() {
     let cancelled = false;
     isHydratingRef.current = true;
     setLoading(true);
+    setHasCachedData(readLocalStorage(userId) !== null);
     setSyncStatus('loading');
     setSyncError('');
 
@@ -220,6 +222,7 @@ export function useAppData() {
     data,
     setData,
     loading,
+    hasCachedData,
     refreshing,
     refreshData,
     syncStatus,

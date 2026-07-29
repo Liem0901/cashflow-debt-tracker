@@ -79,7 +79,7 @@
   }
 
   .robot-loader {
-    animation: robot-travel 2.4s ease-in-out infinite;
+    animation: robot-travel 3.2s ease-in-out infinite;
     transform-origin: center bottom;
   }
 
@@ -144,10 +144,25 @@
 @keyframes robot-travel {
   0%,
   100% {
-    transform: translateX(-14px) rotate(-2deg);
+    transform: translateX(-16px) rotate(-3deg) scaleY(1);
   }
-  50% {
-    transform: translateX(14px) rotate(2deg);
+  6% {
+    transform: translateX(-16px) rotate(0deg) scaleY(0.94);
+  }
+  14% {
+    transform: translateX(-16px) rotate(3deg) scaleY(1);
+  }
+  40% {
+    transform: translateX(16px) rotate(3deg) scaleY(1);
+  }
+  46% {
+    transform: translateX(16px) rotate(0deg) scaleY(0.94);
+  }
+  54% {
+    transform: translateX(16px) rotate(-3deg) scaleY(1);
+  }
+  80% {
+    transform: translateX(-16px) rotate(-3deg) scaleY(1);
   }
 }
 
