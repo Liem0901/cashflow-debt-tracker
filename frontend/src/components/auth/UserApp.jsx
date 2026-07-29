@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { AppProvider } from '../../context/AppContext';
 import LoadingScreen from '../ui/LoadingScreen';
 import LoginPage from '../../pages/LoginPage';
+import LandingPage from '../../pages/LandingPage';
 import App from '../../App';
 
 function ProtectedRoute({ children }) {
@@ -37,6 +38,7 @@ function LoginRoute() {
 export default function UserApp() {
   return (
     <Routes>
+      <Route path="/landing-page/cashflow" element={<LandingPage />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route
         path="/*"
