@@ -5,7 +5,7 @@ import { mdiSend } from '@mdi/js';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { generateFinancialResponse, streamText } from '../../hooks/useFinancialAI';
-import { sendAiChat } from '../../services/aiApi';
+import { streamAiChat } from '../../services/aiApi';
 import { buildAIChatContext } from '../../utils/buildAIChatContext';
 import { AI_BRAND_NAME } from '../../constants/aiBrand';
 import ChatMessage from './ChatMessage';
@@ -45,65 +45,65 @@ export default function ChatInterface({
     setInput('');
     setStreaming(true);
 
-    let content;
-    let chips = [];
+    const assistantId = Date.now();
+    setMessages((prev) => [...prev, { role: 'assistant', content: '', id: assistantId }]);
 
-    const canUseGemini = !isLocalOnly && !isGuest && user;
+    const updateAssistant = (patch) => {
+      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, ...patch } : m)));
+    };
 
-    if (canUseGemini) {
-      try {
-        const context = buildAIChatContext(data, monthKey);
-        const apiMessages = nextMessages.map(({ role, content: messageContent }) => ({
-          role,
-          content: messageContent,
-        }));
-        const response = await sendAiChat({
-          messages: apiMessages,
-          context,
-          getIdToken,
-        });
-        content = response.content;
-        chips = response.followUps;
-      } catch (error) {
-        console.warn('AI API fallback:', error);
-      }
-    }
+    const finishAssistant = (chips) => {
+      setStreaming(false);
+      setFollowUps(chips);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, done: true, followUps: chips }
+            : m.role === 'assistant'
+              ? { ...m, followUps: undefined }
+              : m
+        )
+      );
+    };
 
-    if (!content) {
+    const runOfflineFallback = () => {
       const fallback = generateFinancialResponse(
         trimmed,
         data,
         monthKey,
         nextMessages.slice(0, -1)
       );
-      content = fallback.content;
-      chips = fallback.followUps;
+      streamText(
+        fallback.content,
+        (partial) => updateAssistant({ content: partial }),
+        () => finishAssistant(fallback.followUps)
+      );
+    };
+
+    const canUseGemini = !isLocalOnly && !isGuest && user;
+
+    if (!canUseGemini) {
+      runOfflineFallback();
+      return;
     }
 
-    const assistantId = Date.now();
-    setMessages((prev) => [...prev, { role: 'assistant', content: '', id: assistantId }]);
-
-    streamText(
-      content,
-      (partial) => {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: partial } : m))
-        );
-      },
-      () => {
-        setStreaming(false);
-        setFollowUps(chips);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content, done: true, followUps: chips }
-              : m.role === 'assistant'
-                ? { ...m, followUps: undefined }
-                : m
-          )
-        );
-      }
-    );
+    try {
+      const context = buildAIChatContext(data, monthKey);
+      const apiMessages = nextMessages.map(({ role, content: messageContent }) => ({
+        role,
+        content: messageContent,
+      }));
+      const response = await streamAiChat({
+        messages: apiMessages,
+        context,
+        getIdToken,
+        onDelta: (partial) => updateAssistant({ content: partial }),
+      });
+      finishAssistant(response.followUps);
+    } catch (error) {
+      console.warn('AI API fallback:', error);
+      runOfflineFallback();
+    }
   };
 
   useEffect(() => {

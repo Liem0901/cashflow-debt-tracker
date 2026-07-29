@@ -1,5 +1,6 @@
 import { COLLECTIONS } from '../config/collections.js';
 import { getAuthProfiles } from '../config/firebase.js';
+import { isAdminIdentity } from '../utils/adminIdentity.js';
 import { TransactionRepository } from './transactionRepository.js';
 import { DebtRepository } from './debtRepository.js';
 import { UserRepository } from './userRepository.js';
@@ -16,10 +17,12 @@ async function enrichUsers(users) {
 
   return users.map((user) => {
     const profile = profiles[user.userId] || {};
+    const email = profile.email || null;
     return {
       ...user,
-      email: profile.email || null,
+      email,
       name: resolveDisplayName(profile, user.userId),
+      isAdmin: isAdminIdentity({ uid: user.userId, email }),
     };
   });
 }

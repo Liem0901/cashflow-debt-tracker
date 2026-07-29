@@ -29,6 +29,19 @@ function extractAmount(text) {
   return match ? Number(match[1].replace(/,/g, '')) : null;
 }
 
+function isGreeting(q) {
+  return /^(hi+|hello+|hey+|heya|yo+|sup|good\s?morning|good\s?afternoon|good\s?evening|morning|evening)[\s!.,]*$/i.test(
+    q.trim()
+  );
+}
+
+function explainGreeting() {
+  return {
+    content: `Hi, I'm **${AI_BRAND_SHORT}** — how can I help with your money today?`,
+    followUps: ['How much can I spend?', 'Where did my money go?', 'What budget should I set?'],
+  };
+}
+
 function findAffordabilityAmount(question, previousMessages = []) {
   const fromQuestion = extractAmount(question);
   if (fromQuestion != null) return fromQuestion;
@@ -82,6 +95,27 @@ function isSafeToSpendQuestion(q) {
     /how much can i spend|how much.*(?:safe|available).*spend|safe.?to.?spend|what can i spend/.test(q) ||
     /^can i spend\s*\??$/.test(q.trim())
   );
+}
+
+function isReverseSpendLimitQuestion(q) {
+  if (!/\bsave\b/.test(q) || !/\bspend\b/.test(q)) return false;
+  return /\bif\b/.test(q) || /want to save/.test(q);
+}
+
+function explainReverseSpendLimit(targetSavings, stats, monthLabel) {
+  const maxSpend = stats.monthlyRemaining - targetSavings;
+
+  if (maxSpend < 0) {
+    return {
+      content: `Saving **${formatCurrency(targetSavings)}** this month isn't doable right now — your monthly remaining is only **${formatCurrency(stats.monthlyRemaining)}**, **${formatCurrency(Math.abs(maxSpend))}** short of that target.`,
+      followUps: ['How much can I actually save?', 'Where did my money go?', 'Help me cut spending'],
+    };
+  }
+
+  return {
+    content: `If you set aside **${formatCurrency(targetSavings)}** this month, you'd have **${formatCurrency(maxSpend)}** left to spend in **${monthLabel}**.\n\n| | Amount |\n|---|---|\n| Monthly remaining | ${formatCurrency(stats.monthlyRemaining)} |\n| Savings target | −${formatCurrency(targetSavings)} |\n| **Max to spend** | **${formatCurrency(maxSpend)}** |`,
+    followUps: ['Where did my money go?', 'Can I afford RM200?', 'What budget should I set?'],
+  };
 }
 
 function isAffordabilityQuestion(q, categorySpending, budgets) {
@@ -215,10 +249,21 @@ export function generateFinancialResponse(question, data, monthKey, previousMess
   const prevSpending = getCategorySpending(data.transactions, prevMonth, data.debts);
   const monthLabel = getMonthName(monthKey);
 
+  if (isGreeting(q)) {
+    return explainGreeting();
+  }
+
   if (/why|explain|how come|what reason|tell me more|hold off/.test(q)) {
     const price = findAffordabilityAmount(q, previousMessages);
     if (price != null) {
       return explainAffordability(price, stats, coachingSnapshot);
+    }
+  }
+
+  if (isReverseSpendLimitQuestion(q)) {
+    const targetSavings = extractAmount(q);
+    if (targetSavings != null) {
+      return explainReverseSpendLimit(targetSavings, stats, monthLabel);
     }
   }
 

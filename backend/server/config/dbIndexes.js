@@ -33,6 +33,10 @@ export async function ensureIndexes(db) {
   await auditLogs.createIndex({ createdAt: -1 });
   await auditLogs.createIndex({ adminId: 1, createdAt: -1 });
   await auditLogs.createIndex({ targetUserId: 1, createdAt: -1 });
+
+  const aiUsage = db.collection(COLLECTIONS.AI_USAGE);
+  await aiUsage.createIndex({ userId: 1, date: 1 }, { unique: true });
+  await aiUsage.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3 * 24 * 60 * 60 });
 }
 
 /** @param {import('mongodb').Db} db */
@@ -48,6 +52,7 @@ export async function initCollections(db) {
     COLLECTIONS.USER_CATEGORIES,
     COLLECTIONS.APP_CONFIG,
     COLLECTIONS.AUDIT_LOGS,
+    COLLECTIONS.AI_USAGE,
   ];
 
   for (const name of collections) {

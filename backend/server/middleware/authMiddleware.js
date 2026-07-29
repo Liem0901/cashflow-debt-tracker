@@ -1,4 +1,4 @@
-import { isAuthConfigured, verifyAuthToken } from '../config/firebase.js';
+import { isAuthConfigured, verifyAuthTokenFull } from '../config/firebase.js';
 import { getUserId } from '../config/mongodb.js';
 
 export function setUserCors(res) {
@@ -15,12 +15,12 @@ export function setAiCors(res) {
 
 export async function resolveUserId(req) {
   if (isAuthConfigured()) {
-    const userId = await verifyAuthToken(req.headers.authorization);
-    if (!userId) return { userId: null, unauthorized: true };
-    return { userId, unauthorized: false };
+    const identity = await verifyAuthTokenFull(req.headers.authorization);
+    if (!identity) return { userId: null, unauthorized: true, email: null };
+    return { userId: identity.uid, unauthorized: false, email: identity.email };
   }
 
-  return { userId: getUserId(), unauthorized: false };
+  return { userId: getUserId(), unauthorized: false, email: null };
 }
 
 export function requireMongoConfigured(res) {

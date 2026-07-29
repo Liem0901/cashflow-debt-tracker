@@ -32,6 +32,19 @@ export default function AdminUsersTable({
           ),
         },
         {
+          key: 'isAdmin',
+          label: 'Role',
+          render: (row) => (
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                row.isAdmin ? 'bg-violet-950/50 text-violet-300' : 'bg-portfolio-elevated text-portfolio-gray'
+              }`}
+            >
+              {row.isAdmin ? 'Admin' : 'User'}
+            </span>
+          ),
+        },
+        {
           key: 'disabled',
           label: 'Status',
           render: (row) => (
