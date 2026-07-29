@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRegisterAINewChat } from '../context/AIChatActionsContext';
 import { useChatHistory } from '../hooks/useChatHistory';
 import { hasChatHistory } from '../utils/chatStorage';
-import AIAssistantHeader from '../components/ai/AIAssistantHeader';
 import AILandingHero from '../components/ai/AILandingHero';
 import ChatInterface from '../components/ai/ChatInterface';
 
@@ -12,11 +12,11 @@ export default function AIAssistantPage() {
   const chat = useChatHistory(userId);
   const [conversationStarted, setConversationStarted] = useState(() => hasChatHistory(userId));
   const [prompt, setPrompt] = useState(null);
-  const promptSent = useRef(false);
+  const handledPromptRef = useRef(null);
 
   useEffect(() => {
     setConversationStarted(hasChatHistory(userId));
-    promptSent.current = false;
+    handledPromptRef.current = null;
     setPrompt(null);
   }, [userId]);
 
@@ -27,40 +27,45 @@ export default function AIAssistantPage() {
   }, [chat.messages.length]);
 
   const handleQuickAction = (label) => {
-    if (promptSent.current) return;
-    promptSent.current = true;
+    if (handledPromptRef.current === label) return;
     setConversationStarted(true);
     setPrompt(label);
   };
 
-  const handleNewChat = () => {
-    promptSent.current = false;
+  const handleInitialPromptHandled = useCallback(() => {
+    setPrompt(null);
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    handledPromptRef.current = null;
     chat.clearChat();
     setConversationStarted(false);
     setPrompt(null);
-  };
+  }, [chat.clearChat]);
+
+  useRegisterAINewChat(handleNewChat);
 
   const handleConversationStart = () => {
     setConversationStarted(true);
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <AIAssistantHeader onNewChat={handleNewChat} compact={conversationStarted} />
+    <div className="ai-page-shell flex h-full min-h-0 flex-col overflow-hidden">
+      {!conversationStarted ? (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <AILandingHero onPrimaryAction={handleQuickAction} />
+        </div>
+      ) : null}
 
-      {!conversationStarted ? <AILandingHero onPrimaryAction={handleQuickAction} /> : null}
-
-      <div className={conversationStarted ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0'}>
-        <ChatInterface
-          mode={conversationStarted ? 'active' : 'landing'}
-          onConversationStart={handleConversationStart}
-          initialPrompt={prompt}
-          messages={chat.messages}
-          setMessages={chat.setMessages}
-          followUps={chat.followUps}
-          setFollowUps={chat.setFollowUps}
-        />
-      </div>
+      <ChatInterface        mode={conversationStarted ? 'active' : 'landing'}
+        onConversationStart={handleConversationStart}
+        initialPrompt={prompt}
+        onInitialPromptHandled={handleInitialPromptHandled}
+        handledPromptRef={handledPromptRef}
+        messages={chat.messages}
+        setMessages={chat.setMessages}
+        setFollowUps={chat.setFollowUps}
+      />
     </div>
   );
 }

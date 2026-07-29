@@ -19,6 +19,36 @@
     min-height: 100vh;
   }
 
+  html,
+  body,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #84cc16 #141414;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #10b981 0%, #84cc16 50%, #facc15 100%);
+    border: 1px solid #141414;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #34d399 0%, #a3e635 50%, #fde047 100%);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: #141414;
+  }
+
   h1,
   h2,
   h3 {
@@ -131,7 +161,7 @@
   }
 
   .app-top-bar {
-    @apply sticky top-0 z-30 border-b border-white/5 bg-black/40 backdrop-blur-xl safe-area-top-header lg:hidden;
+    @apply sticky top-0 z-30 border-b border-white/5 bg-black/40 backdrop-blur-xl safe-area-top-header;
   }
 
   .safe-area-bottom {
@@ -197,6 +227,10 @@
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
 
+  .ai-page-shell {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
   @media (min-width: 1024px) {
     .page-padding {
       padding-bottom: 2rem;
@@ -204,6 +238,10 @@
 
     .main-bottom-clearance {
       padding-bottom: 1.5rem;
+    }
+
+    .ai-page-shell {
+      padding-bottom: 0;
     }
   }
 }

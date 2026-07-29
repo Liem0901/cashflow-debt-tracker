@@ -6,6 +6,10 @@ import { isLocalOnly } from '../lib/firebase';
 
 const SAVE_DEBOUNCE_MS = 800;
 const LOCAL_SAVED_FLASH_MS = 2500;
+const REMOTE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** Survives in-app navigation so returning to dashboard does not re-fetch immediately. */
+const sessionCache = new Map();
 
 function readLocalStorage(userId) {
   try {
@@ -22,6 +26,32 @@ function writeLocalStorage(userId, data) {
   } catch (error) {
     console.warn('localStorage write failed:', error);
   }
+}
+
+function readSessionCache(userId) {
+  return sessionCache.get(userId);
+}
+
+function isSessionCacheFresh(entry) {
+  return Boolean(entry && Date.now() - entry.fetchedAt < REMOTE_CACHE_TTL_MS);
+}
+
+function writeSessionCache(userId, data, syncStatus, syncError = '') {
+  sessionCache.set(userId, {
+    data,
+    syncStatus,
+    syncError,
+    fetchedAt: Date.now(),
+  });
+}
+
+function patchSessionCacheData(userId, data) {
+  const existing = sessionCache.get(userId);
+  if (existing) {
+    sessionCache.set(userId, { ...existing, data });
+    return;
+  }
+  writeSessionCache(userId, data, 'local');
 }
 
 async function loadRemoteData(userId, cloudEnabled, getIdToken) {
@@ -77,11 +107,26 @@ async function loadRemoteData(userId, cloudEnabled, getIdToken) {
   }
 }
 
+function getInitialDataState(userId) {
+  const cached = readSessionCache(userId);
+  if (isSessionCacheFresh(cached)) return cached.data;
+  return readLocalStorage(userId) || createInitialData();
+}
+
+function getInitialLoadingState(userId) {
+  const cached = readSessionCache(userId);
+  if (isSessionCacheFresh(cached)) return false;
+  return readLocalStorage(userId) === null;
+}
+
 export function useAppData() {
   const { user, isFirebaseConfigured, isGuest, getIdToken } = useAuth();
   const userId = user?.uid || 'default-user';
   const cloudEnabled =
     isFirebaseConfigured && !isLocalOnly && !isGuest && Boolean(user);
+
+  const getIdTokenRef = useRef(getIdToken);
+  getIdTokenRef.current = getIdToken;
 
   const cloudSyncHint = useMemo(() => {
     if (cloudEnabled) return '';
@@ -94,12 +139,21 @@ export function useAppData() {
     return '';
   }, [cloudEnabled, isFirebaseConfigured, isGuest, isLocalOnly, user]);
 
-  const [data, setDataState] = useState(() => readLocalStorage(userId) || createInitialData());
-  const [loading, setLoading] = useState(true);
-  const [hasCachedData, setHasCachedData] = useState(() => readLocalStorage(userId) !== null);
+  const [data, setDataState] = useState(() => getInitialDataState(userId));
+  const [loading, setLoading] = useState(() => getInitialLoadingState(userId));
+  const [hasCachedData, setHasCachedData] = useState(
+    () => readLocalStorage(userId) !== null || isSessionCacheFresh(readSessionCache(userId))
+  );
   const [refreshing, setRefreshing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('loading');
-  const [syncError, setSyncError] = useState('');
+  const [syncStatus, setSyncStatus] = useState(() => {
+    const cached = readSessionCache(userId);
+    if (isSessionCacheFresh(cached)) return cached.syncStatus;
+    return readLocalStorage(userId) ? 'local' : 'loading';
+  });
+  const [syncError, setSyncError] = useState(() => {
+    const cached = readSessionCache(userId);
+    return isSessionCacheFresh(cached) ? cached.syncError || '' : '';
+  });
 
   const saveTimerRef = useRef(null);
   const localSavedTimerRef = useRef(null);
@@ -128,11 +182,16 @@ export function useAppData() {
         setSyncStatus('syncing');
         setSyncError('');
         try {
-          const result = await saveUserData(userId, payload, getIdToken);
+          const result = await saveUserData(userId, payload, getIdTokenRef.current);
           if (result.offline) {
             flashLocalSaved();
           } else {
             setSyncStatus('synced');
+            patchSessionCacheData(userId, payload);
+            const cached = readSessionCache(userId);
+            if (cached) {
+              writeSessionCache(userId, payload, 'synced', '');
+            }
           }
         } catch (error) {
           console.warn('Cloud save failed:', error);
@@ -150,7 +209,7 @@ export function useAppData() {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(runSave, SAVE_DEBOUNCE_MS);
     },
-    [cloudEnabled, flashLocalSaved, getIdToken, userId]
+    [cloudEnabled, flashLocalSaved, userId]
   );
 
   const setData = useCallback(
@@ -159,6 +218,7 @@ export function useAppData() {
         const next = typeof value === 'function' ? value(prev) : value;
         if (next === prev) return prev;
         writeLocalStorage(userId, next);
+        patchSessionCacheData(userId, next);
         if (!cloudEnabled) {
           scheduleLocalSaveFlash();
         } else {
@@ -178,7 +238,8 @@ export function useAppData() {
     setSyncError('');
 
     try {
-      const result = await loadRemoteData(userId, cloudEnabled, getIdToken);
+      const result = await loadRemoteData(userId, cloudEnabled, () => getIdTokenRef.current());
+      writeSessionCache(userId, result.data, result.syncStatus, result.syncError || '');
       setDataState(result.data);
       setSyncStatus(result.syncStatus);
       setSyncError(result.syncError || '');
@@ -186,21 +247,47 @@ export function useAppData() {
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [cloudEnabled, getIdToken, userId]);
+  }, [cloudEnabled, userId]);
 
   useEffect(() => {
     let cancelled = false;
+    const local = readLocalStorage(userId);
+    const cached = readSessionCache(userId);
+
+    if (isSessionCacheFresh(cached)) {
+      isHydratingRef.current = false;
+      setDataState(cached.data);
+      setSyncStatus(cached.syncStatus);
+      setSyncError(cached.syncError || '');
+      setHasCachedData(true);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+        clearTimeout(saveTimerRef.current);
+        clearTimeout(localSavedTimerRef.current);
+        clearTimeout(localSaveFlashRef.current);
+      };
+    }
+
     isHydratingRef.current = true;
-    setLoading(true);
-    setHasCachedData(readLocalStorage(userId) !== null);
-    setSyncStatus('loading');
+    setHasCachedData(local !== null);
     setSyncError('');
 
+    if (local) {
+      setDataState(local);
+      setLoading(false);
+      setSyncStatus(cloudEnabled ? 'local' : 'local');
+    } else {
+      setLoading(true);
+      setSyncStatus('loading');
+    }
+
     async function hydrate() {
-      const result = await loadRemoteData(userId, cloudEnabled, getIdToken);
+      const result = await loadRemoteData(userId, cloudEnabled, () => getIdTokenRef.current());
 
       if (cancelled) return;
 
+      writeSessionCache(userId, result.data, result.syncStatus, result.syncError || '');
       setDataState(result.data);
       setSyncStatus(result.syncStatus);
       setSyncError(result.syncError || '');
@@ -216,7 +303,7 @@ export function useAppData() {
       clearTimeout(localSavedTimerRef.current);
       clearTimeout(localSaveFlashRef.current);
     };
-  }, [userId, cloudEnabled, getIdToken]);
+  }, [userId, cloudEnabled]);
 
   return {
     data,

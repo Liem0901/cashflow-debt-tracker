@@ -21,10 +21,10 @@ export default function ChatMessage({
   role,
   content,
   isStreaming,
-  onCopy,
   showActions,
-}) {
-  const isUser = role === 'user';
+  followUps,
+  onFollowUpClick,
+}) {  const isUser = role === 'user';
 
   return (
     <motion.div
@@ -34,7 +34,7 @@ export default function ChatMessage({
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-[88%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[88%] min-w-0 rounded-2xl px-4 py-3 ${
           isUser
             ? 'bg-white text-black'
             : 'border border-portfolio-border bg-portfolio-card/90 backdrop-blur-sm'
@@ -53,18 +53,22 @@ export default function ChatMessage({
           <MarkdownText content={content} />
         )}
 
-        {!isUser && showActions && content && !isStreaming ? (
-          <div className="mt-3 border-t border-portfolio-border pt-2">
-            <button
-              type="button"
-              onClick={onCopy}
-              className="text-xs text-portfolio-gray transition-colors hover:text-white"
-            >
-              Copy
-            </button>
+        {!isUser && showActions && content && !isStreaming && followUps?.length > 0 ? (
+          <div className="mt-3 min-w-0 border-t border-portfolio-border pt-3">
+            <div className="grid min-w-0 grid-cols-1 gap-2">
+              {followUps.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onFollowUpClick?.(label)}
+                  className="w-full min-w-0 rounded-full border border-portfolio-border bg-portfolio-elevated px-3 py-2 text-center text-xs leading-snug text-portfolio-light whitespace-normal transition-colors hover:border-white/30 hover:text-white"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
-      </div>
-    </motion.div>
+      </div>    </motion.div>
   );
 }

@@ -2,8 +2,8 @@ import { lazy, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import AppFooter from '../components/profile/AppFooter';
+import AppLogo from '../components/layout/AppLogo';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
-
 const RobotViewer = lazy(() => import('../components/ai/RobotViewer'));
 
 const FEATURES = [
@@ -71,11 +71,7 @@ export default function LandingPage() {
     <div className="landing-bg min-h-screen">
       <div className="landing-bg-content">
       <nav className="safe-area-top-header flex items-center justify-between px-4 pb-4 sm:px-6 sm:pb-5 lg:px-12 lg:pt-5">
-        <div className="flex items-center gap-2.5">
-          <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-lg" aria-hidden />
-          <span className="text-base font-bold text-white sm:text-lg">Cashflow Tracker</span>
-        </div>
-        <div className="flex items-center gap-3 sm:gap-5">
+        <AppLogo />        <div className="flex items-center gap-3 sm:gap-5">
           <Link to="/login" className="text-sm font-bold text-white hover:text-portfolio-gray">
             Login
           </Link>

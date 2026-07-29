@@ -5,9 +5,10 @@ import Sidebar from './Sidebar';
 import BottomNav from '../navigation/BottomNav';
 import FloatingActionButton from '../navigation/FloatingActionButton';
 import AddTransactionModal from '../transactions/AddTransactionModal';
+import AIHeaderActions from '../ai/AIHeaderActions';
+import { AIChatActionsProvider } from '../../context/AIChatActionsContext';
 import { useApp } from '../../context/AppContext';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
-
 export default function Layout() {
   const location = useLocation();
   const isAIPage = location.pathname.startsWith('/ai');
@@ -19,17 +20,37 @@ export default function Layout() {
   const showRefresh = pullDistance > 0 || isRefreshing || refreshing;
 
   return (
-    <div className="min-h-screen lg:flex">
-      <Sidebar />
-      <div className="mx-auto min-h-screen max-w-lg lg:mx-0 lg:max-w-none lg:flex-1">
-        {!isAIPage ? (
-          <div className="app-top-bar px-4 pb-3">
-            <AppLogo />
-            <SyncBadge />
-          </div>
-        ) : null}
+    <AIChatActionsProvider>
+      <div className={`min-h-screen lg:flex${isAIPage ? ' lg:h-screen lg:overflow-hidden' : ''}`}>
+        <Sidebar />
         <div
-          className="transition-transform duration-200 ease-out"
+          className={`mx-auto flex max-w-lg flex-col lg:mx-0 lg:max-w-none lg:flex-1 ${
+            isAIPage
+              ? 'h-[100dvh] overflow-hidden lg:h-full lg:min-h-0'
+              : 'min-h-screen'
+          }`}
+        >
+          <div
+            className={`app-top-bar px-4 pb-3 ${
+              isAIPage ? 'lg:flex lg:justify-end lg:px-10 lg:pt-6' : 'lg:hidden'
+            }`}
+          >
+            {isAIPage ? (
+              <div className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end">
+                <div className="lg:hidden">
+                  <AppLogo />
+                </div>
+                <AIHeaderActions />
+              </div>
+            ) : (
+              <>
+                <AppLogo />
+                <SyncBadge />
+              </>
+            )}
+          </div>
+        <div
+          className={`transition-transform duration-200 ease-out${isAIPage ? ' flex min-h-0 flex-1 flex-col' : ''}`}
           style={{ transform: showRefresh ? `translateY(${pullDistance}px)` : undefined }}
         >
           {!isAIPage ? (
@@ -56,7 +77,7 @@ export default function Layout() {
           <main
             className={
               isAIPage
-                ? 'flex h-[100dvh] flex-col overflow-hidden animate-fade-in lg:h-screen'
+                ? 'flex min-h-0 flex-1 flex-col overflow-hidden animate-fade-in'
                 : 'mx-auto min-h-[calc(100dvh-4rem)] max-w-lg main-bottom-clearance animate-fade-in lg:mx-0 lg:max-w-none lg:px-10 lg:py-8'
             }
           >
@@ -74,5 +95,6 @@ export default function Layout() {
         />
       ) : null}
     </div>
+    </AIChatActionsProvider>
   );
 }

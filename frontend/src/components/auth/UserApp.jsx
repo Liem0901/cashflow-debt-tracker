@@ -4,6 +4,7 @@ import { AppProvider } from '../../context/AppContext';
 import LoadingScreen from '../ui/LoadingScreen';
 import LoginPage from '../../pages/LoginPage';
 import LandingPage from '../../pages/LandingPage';
+import ErrorPage from '../../pages/ErrorPage';
 import App from '../../App';
 
 function AppShell() {
@@ -56,6 +57,7 @@ export default function UserApp() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/landing-page" element={<LandingPage />} />
       <Route path="/login" element={<LoginRoute />} />
+      <Route path="/error" element={<ErrorPage />} />
       <Route
         path="/*"
         element={

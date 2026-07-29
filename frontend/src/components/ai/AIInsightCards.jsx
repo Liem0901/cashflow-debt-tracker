@@ -7,26 +7,17 @@ function InsightCard({ children, className = '', delay = 0 }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      className={`rounded-2xl border border-portfolio-border bg-portfolio-card/80 p-4 backdrop-blur-md ${className}`}
+      className={`min-w-0 overflow-hidden rounded-2xl border border-portfolio-border bg-portfolio-card/80 p-4 backdrop-blur-md ${className}`}
     >
       {children}
     </motion.div>
   );
 }
 
-export default function AIInsightCards({ insights, onQuickAction }) {
-  const actions = [
-    'Can I afford this?',
-    'Analyze my spending',
-    'Create a budget',
-    'Help me save money',
-    'Compare with last month',
-    'Monthly report',
-  ];
-
+export default function AIInsightCards({ insights }) {
   return (
-    <div className="space-y-3 px-4 pb-4">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="w-full min-w-0 max-w-full space-y-3 pb-4">
+      <div className="grid min-w-0 grid-cols-2 gap-3">
         <InsightCard delay={0.05}>
           <p className="text-xs font-medium uppercase tracking-wide text-portfolio-gray">
             Financial Health
@@ -68,8 +59,8 @@ export default function AIInsightCards({ insights, onQuickAction }) {
           <p className="text-xs font-medium uppercase tracking-wide text-portfolio-gray">
             Top category
           </p>
-          <p className="mt-2 text-lg font-semibold text-white">{insights.topCategory}</p>
-          <p className="text-xs text-portfolio-gray">
+          <p className="mt-2 break-words text-lg font-semibold text-white">{insights.topCategory}</p>
+          <p className="break-words text-xs text-portfolio-gray">
             {insights.topCategoryUpcoming > 0 && insights.topCategoryPaid > 0
               ? `${formatCurrency(insights.topCategoryAmount)} total (${formatCurrency(insights.topCategoryPaid)} paid + ${formatCurrency(insights.topCategoryUpcoming)} debts)`
               : insights.topCategoryUpcoming > 0
@@ -95,9 +86,9 @@ export default function AIInsightCards({ insights, onQuickAction }) {
           </p>
           <ul className="space-y-1.5">
             {insights.upcomingBills.map((bill) => (
-              <li key={bill.id} className="flex justify-between text-sm">
-                <span className="text-portfolio-light">{bill.category}</span>
-                <span className="text-white">
+              <li key={bill.id} className="flex min-w-0 items-start justify-between gap-2 text-sm">
+                <span className="min-w-0 break-words text-portfolio-light">{bill.category}</span>
+                <span className="shrink-0 text-right text-white">
                   {formatCurrency(bill.remaining)} · {formatDate(bill.dueDate)}
                 </span>
               </li>
@@ -105,24 +96,6 @@ export default function AIInsightCards({ insights, onQuickAction }) {
           </ul>
         </InsightCard>
       ) : null}
-
-      <InsightCard delay={0.3}>
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-portfolio-gray">
-          Quick actions
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {actions.map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onQuickAction(label)}
-              className="rounded-full border border-portfolio-border bg-portfolio-elevated px-3 py-1.5 text-xs text-portfolio-light transition-colors hover:border-white/25 hover:text-white"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </InsightCard>
     </div>
   );
 }

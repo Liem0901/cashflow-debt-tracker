@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import Icon from '@mdi/react';
 import { mdiSend } from '@mdi/js';
 import { useApp } from '../../context/AppContext';
@@ -10,17 +10,14 @@ import { buildAIChatContext } from '../../utils/buildAIChatContext';
 import { AI_BRAND_NAME } from '../../constants/aiBrand';
 import ChatMessage from './ChatMessage';
 
-/** Bottom nav clearance: nav height (4.5rem) + safe area */
-const INPUT_BOTTOM =
-  'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]';
-
 export default function ChatInterface({
   onConversationStart,
   initialPrompt,
+  onInitialPromptHandled,
+  handledPromptRef,
   mode = 'landing',
   messages,
   setMessages,
-  followUps,
   setFollowUps,
 }) {
   const { data, monthKey } = useApp();
@@ -28,7 +25,6 @@ export default function ChatInterface({
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef(null);
-  const promptHandled = useRef(false);
   const isActive = mode === 'active';
 
   useEffect(() => {
@@ -42,6 +38,7 @@ export default function ChatInterface({
 
     onConversationStart?.();
     setFollowUps([]);
+    setMessages((prev) => prev.map((m) => ({ ...m, followUps: undefined })));
     const userMessage = { role: 'user', content: trimmed };
     const nextMessages = [...messages, userMessage];
     setMessages((prev) => [...prev, userMessage]);
@@ -97,21 +94,24 @@ export default function ChatInterface({
         setStreaming(false);
         setFollowUps(chips);
         setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content, done: true } : m))
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content, done: true, followUps: chips }
+              : m.role === 'assistant'
+                ? { ...m, followUps: undefined }
+                : m
+          )
         );
       }
     );
   };
 
   useEffect(() => {
-    promptHandled.current = false;
-  }, [initialPrompt]);
+    if (!initialPrompt || handledPromptRef?.current === initialPrompt) return;
 
-  useEffect(() => {
-    if (initialPrompt && !promptHandled.current) {
-      promptHandled.current = true;
-      sendMessage(initialPrompt);
-    }
+    handledPromptRef.current = initialPrompt;
+    sendMessage(initialPrompt);
+    onInitialPromptHandled?.(initialPrompt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
 
@@ -120,17 +120,18 @@ export default function ChatInterface({
     sendMessage(input);
   };
 
-  const copyLastResponse = () => {
-    const last = [...messages].reverse().find((m) => m.role === 'assistant');
-    if (last?.content) navigator.clipboard?.writeText(last.content.replace(/\*\*/g, ''));
-  };
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (message.role === 'assistant' && message.done) {
+        return message.id;
+      }
+    }
+    return null;
+  }, [messages]);
 
   return (
-    <div
-      className={`flex min-h-0 flex-col ${
-        isActive ? 'min-h-0 flex-1' : 'shrink-0'
-      }`}
-    >
+    <div className={`flex min-h-0 flex-col ${isActive ? 'flex-1' : 'shrink-0'}`}>
       {isActive ? (
         <div
           className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-2 pt-3"
@@ -147,8 +148,9 @@ export default function ChatInterface({
                 role={msg.role}
                 content={msg.content}
                 isStreaming={streaming && msg.role === 'assistant' && !msg.done}
-                showActions={msg.role === 'assistant' && msg.done}
-                onCopy={copyLastResponse}
+                showActions={msg.role === 'assistant' && msg.done && msg.id === lastAssistantMessageId}
+                followUps={msg.id === lastAssistantMessageId ? msg.followUps : undefined}
+                onFollowUpClick={sendMessage}
               />
             ))}
           </AnimatePresence>
@@ -156,30 +158,9 @@ export default function ChatInterface({
         </div>
       ) : null}
 
-      {followUps.length > 0 && !streaming && isActive ? (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-2"
-        >
-          {followUps.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => sendMessage(chip)}
-              className="shrink-0 rounded-full border border-portfolio-border bg-portfolio-elevated px-3 py-1.5 text-xs text-portfolio-light transition-colors hover:border-white/30 hover:text-white"
-            >
-              {chip}
-            </button>
-          ))}
-        </motion.div>
-      ) : null}
-
       <form
         onSubmit={handleSubmit}
-        className={`shrink-0 border-t border-portfolio-border/80 bg-black/90 px-4 py-3 backdrop-blur-xl ${INPUT_BOTTOM} ${
-          !isActive ? 'mt-auto' : ''
-        }`}
+        className="shrink-0 border-t border-portfolio-border/80 bg-black/90 px-4 py-3 backdrop-blur-xl"
       >
         <div className="flex items-end gap-2 rounded-2xl border border-portfolio-border bg-portfolio-elevated/90 p-2 backdrop-blur-sm">
           <button
