@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import LoadingScreen from './components/ui/LoadingScreen';
+import PageSkeleton from './components/ui/PageSkeleton';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // After a new deploy, a stale tab's chunk hashes 404. Reload once to pick up
@@ -36,7 +36,7 @@ const SavingsPage = lazyWithReload(() => import('./pages/SavingsPage'));
 export default function App() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<LoadingScreen />}>
+      <Suspense fallback={<PageSkeleton />}>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
