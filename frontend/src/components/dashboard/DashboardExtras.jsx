@@ -94,11 +94,13 @@ export function DashboardQuickLinks() {
           to={to}
           className="flex flex-col items-center gap-1.5 rounded-2xl border border-portfolio-border bg-portfolio-card px-2 py-3 text-center transition-colors hover:border-white/20 hover:bg-portfolio-elevated"
         >
-          {coin ? (
-            <ShinyCoin size="sm" />
-          ) : (
-            <i className={`bi ${icon} text-lg text-portfolio-gray`} aria-hidden="true" />
-          )}
+          <span className="flex h-5 w-5 items-center justify-center">
+            {coin ? (
+              <ShinyCoin size="sm" />
+            ) : (
+              <i className={`bi ${icon} text-lg leading-none text-portfolio-gray`} aria-hidden="true" />
+            )}
+          </span>
           <span className="text-[10px] font-medium text-portfolio-light">{label}</span>
         </Link>
       ))}

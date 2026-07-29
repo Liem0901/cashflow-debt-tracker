@@ -1,35 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { AI_BRAND_NAME, AI_BRAND_SHORT } from '../../constants/aiBrand';
-
-const tabs = [
-  {
-    to: '/',
-    label: 'Home',
-    end: true,
-    icon: 'bi bi-house-door-fill',
-  },
-  {
-    to: '/calendar',
-    label: 'Calendar',
-    icon: 'bi bi-calendar3',
-  },
-  {
-    to: '/ai',
-    label: AI_BRAND_SHORT,
-    center: true,
-    icon: 'bi bi-stars',
-  },
-  {
-    to: '/history',
-    label: 'History',
-    icon: 'bi bi-list-ul',
-  },
-  {
-    to: '/profile',
-    label: 'Profile',
-    icon: 'bi bi-person-fill',
-  },
-];
+import { AI_BRAND_NAME } from '../../constants/aiBrand';
+import { NAV_TABS } from '../../constants/navTabs';
 
 function NavItem({ tab }) {
   if (tab.center) {
@@ -104,11 +75,11 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="bottom-nav safe-area-bottom fixed bottom-0 left-1/2 z-40 flex w-full max-w-lg -translate-x-1/2 flex-col overflow-visible border-t border-white/10 bg-portfolio-card/75 backdrop-blur-2xl"
+      className="bottom-nav safe-area-bottom fixed bottom-0 left-1/2 z-40 flex w-full max-w-lg -translate-x-1/2 flex-col overflow-visible border-t border-white/10 bg-portfolio-card/75 backdrop-blur-2xl lg:hidden"
       aria-label="Main navigation"
     >
       <div className="bottom-nav-tabs grid h-[4.5rem] grid-cols-5 items-center px-1 py-2">
-        {tabs.map((tab) => (
+        {NAV_TABS.map((tab) => (
           <NavItem key={tab.to} tab={tab} />
         ))}
       </div>

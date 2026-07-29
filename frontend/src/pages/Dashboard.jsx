@@ -28,25 +28,36 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="page-padding space-y-4 animate-fade-in">
-      <Warnings warnings={stats.warnings} />
+    <div className="page-padding space-y-4 animate-fade-in lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+      {stats.warnings.length > 0 ? (
+        <div className="lg:col-span-2">
+          <Warnings warnings={stats.warnings} />
+        </div>
+      ) : null}
 
-      <SalaryCard
-        salary={stats.salary}
-        viewMonth={viewMonth}
-        currentMonth={monthKey}
-        onViewMonthChange={setViewMonth}
-      />
+      <div className="space-y-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4 lg:space-y-0">
+        <div className="space-y-4 lg:flex lg:flex-col lg:justify-between">
+          <SalaryCard
+            salary={stats.salary}
+            viewMonth={viewMonth}
+            currentMonth={monthKey}
+            onViewMonthChange={setViewMonth}
+          />
+          <QuickInsights stats={stats} viewMonth={viewMonth} currentMonth={monthKey} />
+          <SavingsTeaser balance={data.savingsBalance} goal={data.savingsGoal} />
+          <DashboardQuickLinks />
+        </div>
 
-      <DonutChart
-        totalExpenses={stats.totalExpenses}
-        upcomingDebt={stats.upcomingDebt}
-        safeBalance={stats.safeBalance}
-      />
+        <DonutChart
+          totalExpenses={stats.totalExpenses}
+          upcomingDebt={stats.upcomingDebt}
+          safeBalance={stats.safeBalance}
+        />
+      </div>
 
-      <QuickInsights stats={stats} viewMonth={viewMonth} currentMonth={monthKey} />
-
-      <ExpenseTrendChart dailyExpenses={dailyExpenses} monthKey={viewMonth} />
+      <div className="lg:col-span-2">
+        <ExpenseTrendChart dailyExpenses={dailyExpenses} monthKey={viewMonth} />
+      </div>
 
       <CategorySpendingChart
         categorySpending={stats.categorySpending}
@@ -54,10 +65,6 @@ export default function Dashboard() {
       />
 
       <RecentExpenses transactions={stats.recentTransactions} debts={data.debts} />
-
-      <SavingsTeaser balance={data.savingsBalance} goal={data.savingsGoal} />
-
-      <DashboardQuickLinks />
     </div>
   );
 }

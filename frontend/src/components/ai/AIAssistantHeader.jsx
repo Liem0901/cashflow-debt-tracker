@@ -12,10 +12,13 @@ export default function AIAssistantHeader({ onNewChat, compact = false }) {
       }`}
     >
       <div className="flex items-center justify-between gap-3">
-        <h1 className="flex min-w-0 items-center gap-2 text-base font-bold text-white">
-          <i className="fa-regular fa-comment shrink-0 text-[1.125rem]" aria-hidden />
-          <span className="truncate">{AI_BRAND_NAME}</span>
-        </h1>
+        <div className="min-w-0">
+          <h1 className="flex min-w-0 items-center gap-2 text-xl font-bold text-white">
+            <i className="fa-regular fa-comment shrink-0 text-lg" aria-hidden />
+            <span className="truncate">{AI_BRAND_NAME}</span>
+          </h1>
+          {!compact ? <p className="mt-0.5 text-sm text-portfolio-gray">Your financial assistant</p> : null}
+        </div>
 
         <div className="flex shrink-0 items-center gap-1">
           <button type="button" onClick={onNewChat} className={iconButtonClass} aria-label="New conversation">

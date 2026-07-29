@@ -139,6 +139,16 @@
   .main-bottom-clearance {
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
+
+  @media (min-width: 1024px) {
+    .page-padding {
+      padding-bottom: 2rem;
+    }
+
+    .main-bottom-clearance {
+      padding-bottom: 1.5rem;
+    }
+  }
 }
 
 @keyframes robot-travel {

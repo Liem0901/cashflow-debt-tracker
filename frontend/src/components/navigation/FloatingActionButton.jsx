@@ -51,9 +51,11 @@ const ACTIONS = [
 
 const menuVariants = {
   closed: {
+    opacity: 0,
     transition: { staggerChildren: 0.04, staggerDirection: -1 },
   },
   open: {
+    opacity: 1,
     transition: { staggerChildren: 0.055, delayChildren: 0.04 },
   },
 };
@@ -114,9 +116,9 @@ export default function FloatingActionButton() {
         ) : null}
       </AnimatePresence>
 
-      <div className="pointer-events-none fixed right-4 z-50 bottom-[calc(5.5rem+env(safe-area-inset-bottom))]">
-        <div className="pointer-events-auto flex flex-col items-end gap-2.5">
-          <AnimatePresence mode="popLayout">
+      <div className="pointer-events-none fixed right-4 z-50 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:bottom-8">
+        <div className="pointer-events-auto relative flex flex-col items-end">
+          <AnimatePresence>
             {open ? (
               <motion.div
                 key="fab-menu"
@@ -124,7 +126,7 @@ export default function FloatingActionButton() {
                 initial="closed"
                 animate="open"
                 exit="closed"
-                className="flex flex-col items-end gap-2.5"
+                className="absolute bottom-[4.125rem] right-0 flex flex-col items-end gap-2.5"
               >
                 {ACTIONS.map((action) => (
                   <motion.button

@@ -13,8 +13,10 @@ function SidebarLink({ to, label, end = false }) {
       to={to}
       end={end}
       className={({ isActive }) =>
-        `block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-          isActive ? 'bg-white text-black' : 'text-portfolio-gray hover:bg-portfolio-elevated hover:text-white'
+        `block rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+          isActive
+            ? 'border-white/10 bg-white/10 text-white backdrop-blur-sm'
+            : 'border-transparent text-portfolio-gray hover:bg-white/5 hover:text-white'
         }`
       }
     >
@@ -34,7 +36,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-black text-white lg:flex">
-      <aside className="border-b border-portfolio-border bg-portfolio-card lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <aside className="border-b border-white/10 bg-portfolio-card/60 backdrop-blur-2xl lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
         <div className="p-4">
           <p className="text-xs uppercase tracking-widest text-portfolio-gray">Admin</p>
           <h1 className="mt-1 text-lg font-bold">Cashflow Tracker</h1>
