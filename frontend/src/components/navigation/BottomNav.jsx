@@ -7,29 +7,28 @@ function NavItem({ tab }) {
     return (
       <NavLink
         to={tab.to}
-        className="relative flex h-full flex-col items-center justify-center"
+        className={({ isActive }) =>
+          `group relative flex h-full flex-col items-center justify-center transition-transform duration-300 ${
+            isActive ? 'scale-105' : 'hover:scale-105'
+          }`
+        }
         aria-label={AI_BRAND_NAME}
       >
-        {({ isActive: active }) => (
+        {({ isActive }) => (
           <>
             <span
-              className={`relative -mt-6 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-glow-ai ${
-                active
-                  ? 'bg-gradient-to-br from-violet-500 via-fuchsia-500 to-amber-400 text-white'
-                  : 'bg-gradient-to-br from-violet-600/90 to-fuchsia-600/90 text-white'
+              className={`relative -mt-6 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 via-lime-500 to-yellow-400 text-white transition-all duration-300 ${
+                isActive ? 'ring-2 ring-lime-300/40' : 'group-hover:ring-2 group-hover:ring-lime-300/30'
               }`}
             >
-              <span
+              <i
+                className={`${tab.icon} relative z-10 pointer-events-none text-xl text-white`}
                 aria-hidden
-                className={`absolute inset-0 rounded-full bg-gradient-to-br from-violet-400/40 to-fuchsia-400/40 blur-md transition-opacity duration-150 ${
-                  active ? 'opacity-100' : 'opacity-0'
-                }`}
               />
-              <i className={`${tab.icon} relative z-10 pointer-events-none text-xl text-white`} aria-hidden />
             </span>
             <span
-              className={`mt-1 block h-3.5 w-full truncate text-center text-[10px] font-medium leading-3.5 ${
-                active ? 'text-white' : 'text-portfolio-gray'
+              className={`mt-1 block h-3.5 w-full truncate text-center text-[10px] font-medium leading-3.5 transition-colors ${
+                isActive ? 'text-white' : 'text-portfolio-gray group-hover:text-white'
               }`}
             >
               {tab.label}
@@ -44,20 +43,20 @@ function NavItem({ tab }) {
     <NavLink
       to={tab.to}
       end={tab.end}
-      className="flex h-full min-w-0 flex-col items-center justify-center"
+      className="group flex h-full min-w-0 flex-col items-center justify-center"
     >
       {({ isActive: active }) => (
         <>
           <span
-            className={`flex h-5 w-5 shrink-0 items-center justify-center ${
-              active ? 'text-white' : 'text-portfolio-gray'
+            className={`flex h-5 w-5 shrink-0 items-center justify-center transition-colors ${
+              active ? 'text-white' : 'text-portfolio-gray group-hover:text-white'
             }`}
           >
             <i className={`${tab.icon} pointer-events-none text-lg`} aria-hidden />
           </span>
           <span
-            className={`mt-1 block h-3.5 w-full truncate text-center text-[10px] font-medium leading-3.5 ${
-              active ? 'text-white' : 'text-portfolio-gray'
+            className={`mt-1 block h-3.5 w-full truncate text-center text-[10px] font-medium leading-3.5 transition-colors ${
+              active ? 'text-white' : 'text-portfolio-gray group-hover:text-white'
             }`}
           >
             {tab.label}
@@ -70,8 +69,9 @@ function NavItem({ tab }) {
 
 export default function BottomNav() {
   const location = useLocation();
-  const hideOnRoutes = ['/login'];
+  const hideOnRoutes = ['/login', '/landing-page'];
   if (hideOnRoutes.some((p) => location.pathname.startsWith(p))) return null;
+  if (location.pathname === '/') return null;
 
   return (
     <nav

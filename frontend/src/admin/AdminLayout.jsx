@@ -35,7 +35,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white lg:flex">
+    <div className="min-h-screen text-white lg:flex">
       <aside className="border-b border-white/10 bg-portfolio-card/60 backdrop-blur-2xl lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
         <div className="p-4">
           <p className="text-xs uppercase tracking-widest text-portfolio-gray">Admin</p>
@@ -48,7 +48,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="hidden border-t border-portfolio-border p-4 lg:block">
-          <Button variant="secondary" size="sm" className="w-full" onClick={() => navigate('/')}>
+          <Button variant="secondary" size="sm" className="w-full" onClick={() => navigate('/dashboard')}>
             Back to app
           </Button>
           <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={handleSignOut}>
@@ -61,7 +61,7 @@ export default function AdminLayout() {
         <header className="flex items-center justify-between border-b border-portfolio-border px-4 py-3 lg:hidden">
           <p className="text-sm font-semibold">Admin Panel</p>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
               App
             </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>

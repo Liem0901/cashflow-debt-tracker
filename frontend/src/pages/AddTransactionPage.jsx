@@ -13,7 +13,7 @@ export default function AddTransactionPage() {
       mode: searchParams.get('mode') || 'cash',
       source: searchParams.get('source') || undefined,
     });
-    navigate('/', { replace: true });
+    navigate('/dashboard', { replace: true });
   }, [navigate, openAddTransaction, searchParams]);
 
   return null;

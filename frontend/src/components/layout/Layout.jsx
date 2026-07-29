@@ -19,9 +19,9 @@ export default function Layout() {
   const showRefresh = pullDistance > 0 || isRefreshing || refreshing;
 
   return (
-    <div className="min-h-screen bg-black lg:flex">
+    <div className="min-h-screen lg:flex">
       <Sidebar />
-      <div className="mx-auto min-h-screen max-w-lg bg-black lg:mx-0 lg:max-w-none lg:flex-1">
+      <div className="mx-auto min-h-screen max-w-lg lg:mx-0 lg:max-w-none lg:flex-1">
         {!isAIPage ? (
           <div className="app-top-bar px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] lg:hidden">
             <AppLogo />

@@ -15,7 +15,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-black px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-portfolio-gray">Something went wrong loading this page.</p>
         <button
           type="button"

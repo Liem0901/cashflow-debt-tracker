@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+
+function getPostLoginPath(from) {
+  if (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')) {
+    return from;
+  }
+  return '/dashboard';
+}
 
 export default function LoginPage() {
   const {
@@ -15,6 +22,8 @@ export default function LoginPage() {
     setError,
   } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = getPostLoginPath(location.state?.from);
 
   const [mode, setMode] = useState('signin'); // signin | signup
   const [email, setEmail] = useState('');
@@ -34,7 +43,7 @@ export default function LoginPage() {
         : await signInWithEmail(email, password);
 
     setBusy(false);
-    if (ok) navigate('/', { replace: true });
+    if (ok) navigate(redirectTo, { replace: true });
   };
 
   const handleGoogleSignIn = async () => {
@@ -42,19 +51,19 @@ export default function LoginPage() {
     setError(null);
     const ok = await signInWithGoogle();
     setBusy(false);
-    if (ok) navigate('/', { replace: true });
+    if (ok) navigate(redirectTo, { replace: true });
   };
 
   const handleGuestSignIn = (e) => {
     e.preventDefault();
     setError(null);
     if (signInAsGuest(guestName)) {
-      navigate('/', { replace: true });
+      navigate(redirectTo, { replace: true });
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 flex flex-col items-center text-center">
           <img

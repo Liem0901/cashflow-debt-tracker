@@ -39,7 +39,7 @@ export default function App() {
       <Suspense fallback={<PageSkeleton />}>
         <Routes>
           <Route element={<Layout />}>
-            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="budget" element={<BudgetPage />} />
             <Route path="ai" element={<AIAssistantPage />} />
             <Route path="debts" element={<DebtsPage />} />
@@ -48,7 +48,7 @@ export default function App() {
             <Route path="add" element={<AddTransactionPage />} />
             <Route path="history" element={<TransactionHistoryPage />} />
             <Route path="savings" element={<SavingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
       </Suspense>

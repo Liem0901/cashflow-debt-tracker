@@ -12,7 +12,7 @@ function SidebarLink({ to, label, icon, end, center }) {
         `flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
           isActive
             ? center
-              ? 'border-transparent bg-gradient-to-br from-violet-500/80 via-fuchsia-500/80 to-amber-400/80 text-white'
+              ? 'border-transparent bg-gradient-to-br from-emerald-500 via-lime-500 to-yellow-400 text-white shadow-lg shadow-emerald-500/25'
               : 'border-white/10 bg-white/10 text-white backdrop-blur-sm'
             : 'border-transparent text-portfolio-gray hover:bg-white/5 hover:text-white'
         }`

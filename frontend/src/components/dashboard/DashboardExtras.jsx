@@ -83,25 +83,37 @@ export function DashboardQuickLinks() {
     { to: '/history', label: 'History', icon: 'bi-clock-history' },
     { to: '/savings', label: 'Savings', coin: true },
     { to: '/debts', label: 'Debts', icon: 'bi-wallet2' },
-    { to: '/ai', label: `Ask ${AI_BRAND_SHORT}`, icon: 'bi-stars' },
+    { to: '/ai', label: `Ask ${AI_BRAND_SHORT}`, icon: 'bi-stars', highlight: true },
   ];
 
   return (
     <div className="grid grid-cols-5 gap-2">
-      {links.map(({ to, label, icon, coin }) => (
+      {links.map(({ to, label, icon, coin, highlight }) => (
         <Link
           key={to}
           to={to}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border border-portfolio-border bg-portfolio-card px-2 py-3 text-center transition-colors hover:border-white/20 hover:bg-portfolio-elevated"
+          className={
+            highlight
+              ? 'group flex flex-col items-center gap-1.5 rounded-2xl border border-portfolio-border bg-portfolio-card px-2 py-3 text-center transition-all duration-300 hover:border-lime-400/40 hover:bg-gradient-to-br hover:from-emerald-500/10 hover:via-lime-500/5 hover:to-yellow-400/10 hover:shadow-[0_0_20px_rgba(132,204,22,0.15)]'
+              : 'flex flex-col items-center gap-1.5 rounded-2xl border border-portfolio-border bg-portfolio-card px-2 py-3 text-center transition-colors hover:border-white/20 hover:bg-portfolio-elevated'
+          }
         >
           <span className="flex h-5 w-5 items-center justify-center">
             {coin ? (
               <ShinyCoin size="sm" />
             ) : (
-              <i className={`bi ${icon} text-lg leading-none text-portfolio-gray`} aria-hidden="true" />
+              <i className={`bi ${icon} text-lg leading-none text-white`} aria-hidden="true" />
             )}
           </span>
-          <span className="text-[10px] font-medium text-portfolio-light">{label}</span>
+          <span
+            className={`text-[10px] font-medium ${
+              highlight
+                ? 'text-portfolio-light transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-emerald-400 group-hover:to-yellow-400 group-hover:bg-clip-text group-hover:text-transparent'
+                : 'text-portfolio-light'
+            }`}
+          >
+            {label}
+          </span>
         </Link>
       ))}
     </div>

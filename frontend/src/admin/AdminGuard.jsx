@@ -13,7 +13,7 @@ export default function AdminGuard() {
 
   if (!requiresAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-6 text-center text-portfolio-light">
+      <div className="flex min-h-screen items-center justify-center p-6 text-center text-portfolio-light">
         <div>
           <p className="text-lg font-semibold text-white">Admin requires Firebase auth</p>
           <p className="mt-2 text-sm text-portfolio-gray">
@@ -30,7 +30,7 @@ export default function AdminGuard() {
 
   if (!hasAdminAllowlist()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-6 text-center text-portfolio-light">
+      <div className="flex min-h-screen items-center justify-center p-6 text-center text-portfolio-light">
         <div>
           <p className="text-lg font-semibold text-white">Admin allowlist not configured</p>
           <p className="mt-2 text-sm text-portfolio-gray">
@@ -43,7 +43,7 @@ export default function AdminGuard() {
 
   if (!isAdminUser(user)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-6 text-center text-portfolio-light">
+      <div className="flex min-h-screen items-center justify-center p-6 text-center text-portfolio-light">
         <div>
           <p className="text-lg font-semibold text-white">Access denied</p>
           <p className="mt-2 text-sm text-portfolio-gray">

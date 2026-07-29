@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+    <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-portfolio-border bg-portfolio-card p-6">
         <p className="text-xs uppercase tracking-widest text-portfolio-gray">Administrator</p>
         <h1 className="mt-2 text-2xl font-bold text-white">Admin sign in</h1>

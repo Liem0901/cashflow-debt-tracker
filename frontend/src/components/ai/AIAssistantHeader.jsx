@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { AI_BRAND_NAME } from '../../constants/aiBrand';
 
 const iconButtonClass =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-portfolio-gray transition-colors hover:bg-portfolio-elevated hover:text-white';
+  'flex h-9 w-9 shrink-0 items-center justify-center text-portfolio-gray transition-colors hover:text-white';
 
 export default function AIAssistantHeader({ onNewChat, compact = false }) {
   return (
@@ -22,18 +22,10 @@ export default function AIAssistantHeader({ onNewChat, compact = false }) {
 
         <div className="flex shrink-0 items-center gap-1">
           <button type="button" onClick={onNewChat} className={iconButtonClass} aria-label="New conversation">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <i className="bi bi-plus-lg text-lg" aria-hidden />
           </button>
           <Link to="/history" className={iconButtonClass} aria-label="Transaction history">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <i className="bi bi-clock-history text-lg" aria-hidden />
           </Link>
         </div>
       </div>

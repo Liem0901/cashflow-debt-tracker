@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         portfolio: {
-          black: '#000000',
+          black: '#050505',
           card: '#0f0f0f',
           elevated: '#1a1a1a',
           border: '#2a2a2a',
