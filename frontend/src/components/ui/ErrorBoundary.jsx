@@ -14,6 +14,8 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.hasError) return this.props.children;
 
+    if (this.props.fallback !== undefined) return this.props.fallback;
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-portfolio-gray">Something went wrong loading this page.</p>

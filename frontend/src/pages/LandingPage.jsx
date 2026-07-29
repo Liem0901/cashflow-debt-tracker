@@ -2,6 +2,7 @@ import { lazy, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import AppFooter from '../components/profile/AppFooter';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 const RobotViewer = lazy(() => import('../components/ai/RobotViewer'));
 
@@ -110,9 +111,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <Suspense fallback={<div className="hidden shrink-0 lg:block lg:h-[26rem] lg:max-w-md" />}>
-            <RobotViewer className="hidden shrink-0 lg:block lg:h-[26rem] lg:max-w-md" />
-          </Suspense>
+          <ErrorBoundary fallback={<div className="hidden shrink-0 lg:block lg:h-[26rem] lg:max-w-md" />}>
+            <Suspense fallback={<div className="hidden shrink-0 lg:block lg:h-[26rem] lg:max-w-md" />}>
+              <RobotViewer className="hidden shrink-0 lg:block lg:h-[26rem] lg:max-w-md" />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         <button
