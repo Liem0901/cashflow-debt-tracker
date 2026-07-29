@@ -32,7 +32,7 @@ export default function LandingPage() {
     <div className="bg-black">
       <nav className="flex items-center justify-between px-6 py-5 lg:px-12">
         <div className="flex items-center gap-2.5">
-          <img src="/icons/icon.svg" alt="" className="h-8 w-8 rounded-lg" aria-hidden />
+          <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-lg" aria-hidden />
           <span className="text-lg font-bold text-white">Cashflow Tracker</span>
         </div>
         <div className="flex items-center gap-5">
