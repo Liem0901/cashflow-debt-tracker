@@ -1,0 +1,446 @@
+import { createContext, useContext, useMemo, useCallback, useEffect, useState } from 'react';
+import { useAppData } from '../hooks/useAppData';
+import {
+  createInitialData,
+  generateId,
+  normalizeBudgets,
+} from '../data/initialData';
+import { getCurrentMonthKey, todayISO, shiftMonthKey } from '../utils/formatters';
+import { utcNowIso, normalizeArchivedMonths } from '../utils/dates';
+import {
+  getCashExpenses,
+  getDashboardStats,
+  getBaseSalaryForMonth,
+} from '../utils/calculations';
+import { normalizeSavingsData, applySavingsDeposit, applySavingsWithdraw } from '../utils/savings';
+import LoadingScreen from '../components/ui/LoadingScreen';
+
+const AppContext = createContext(null);
+
+function normalizeSalaryData(data) {
+  if (data.salaryByMonth) return data;
+  const monthKey = data.currentMonth || getCurrentMonthKey();
+  return {
+    ...data,
+    salaryByMonth: data.salary ? { [monthKey]: data.salary } : {},
+  };
+}
+
+function normalizeAppData(data) {
+  const withSalary = normalizeSalaryData(data);
+  const withSavings = normalizeSavingsData(withSalary);
+  const withTimestamps = {
+    ...withSavings,
+    archivedMonths: normalizeArchivedMonths(withSavings.archivedMonths),
+  };
+  const budgets = normalizeBudgets(withTimestamps.budgets);
+  const hadHidden = Array.isArray(withTimestamps.hiddenBudgetCategories);
+  const budgetsChanged = budgets !== withTimestamps.budgets;
+
+  if (!hadHidden && !budgetsChanged) return withTimestamps;
+
+  const { hiddenBudgetCategories: _removed, ...rest } = withTimestamps;
+  return { ...rest, budgets };
+}
+
+function advanceOneMonth(data) {
+  const todayMonth = getCurrentMonthKey();
+  if (data.currentMonth === todayMonth) return data;
+
+  const closingMonth = data.currentMonth;
+  const nextMonth = shiftMonthKey(closingMonth, 1);
+  const prevStats = getDashboardStats(data, closingMonth);
+  const withAutoSave = applyAutoMonthEndSave(data, closingMonth, prevStats.safeBalance);
+
+  const prevSalary = getBaseSalaryForMonth(withAutoSave, closingMonth);
+  const salaryByMonth = { ...(withAutoSave.salaryByMonth || {}) };
+  if (salaryByMonth[nextMonth] == null && prevSalary > 0) {
+    salaryByMonth[nextMonth] = prevSalary;
+  }
+
+  const archived = {
+    month: closingMonth,
+    transactions: withAutoSave.transactions,
+    debtsSnapshot: withAutoSave.debts.map((d) => ({ ...d })),
+    cashExpenses: getCashExpenses(withAutoSave.transactions, closingMonth),
+    salary: prevSalary,
+    safeBalance: prevStats.safeBalance,
+    archivedAt: utcNowIso(),
+  };
+
+  return {
+    ...withAutoSave,
+    currentMonth: nextMonth,
+    salaryByMonth,
+    archivedMonths: [...(withAutoSave.archivedMonths || []), archived],
+  };
+}
+
+function checkMonthReset(data) {
+  let next = data;
+  let guard = 0;
+
+  while (next.currentMonth !== getCurrentMonthKey() && guard < 24) {
+    next = advanceOneMonth(next);
+    guard += 1;
+  }
+
+  return next;
+}
+
+export function AppProvider({ children }) {
+  const {
+    data,
+    setData,
+    loading,
+    hasCachedData,
+    refreshing,
+    refreshData,
+    syncStatus,
+    syncError,
+    cloudEnabled,
+    cloudSyncHint,
+  } = useAppData();
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(todayISO);
+  const [addTransactionModal, setAddTransactionModal] = useState(null);
+
+  useEffect(() => {
+    if (loading) return;
+    setData((prev) => checkMonthReset(normalizeAppData(prev)));
+  }, [loading, setData]);
+
+  const monthKey = data.currentMonth || getCurrentMonthKey();
+
+  const stats = useMemo(() => getDashboardStats(data, monthKey), [data, monthKey]);
+
+  const updateSalary = useCallback(
+    (salary, paydayDate, targetMonthKey) => {
+      setData((prev) => {
+        const key = targetMonthKey || prev.currentMonth || getCurrentMonthKey();
+        return {
+          ...prev,
+          salary: Number(salary),
+          paydayDate: Number(paydayDate),
+          salaryByMonth: {
+            ...(prev.salaryByMonth || {}),
+            [key]: Number(salary),
+          },
+        };
+      });
+    },
+    [setData]
+  );
+
+  const updateBudgets = useCallback(
+    (budgets) => {
+      setData((prev) => ({ ...prev, budgets }));
+    },
+    [setData]
+  );
+
+  const addCashTransaction = useCallback(
+    ({ amount, category, description, date, paymentMethod = 'cash' }) => {
+      const transaction = {
+        id: generateId('tx'),
+        type: 'cash',
+        amount: Number(amount),
+        category,
+        description: description || '',
+        date,
+        paymentMethod,
+      };
+      setData((prev) => ({
+        ...prev,
+        transactions: [transaction, ...prev.transactions],
+      }));
+      return transaction;
+    },
+    [setData]
+  );
+
+  const addDebtTransaction = useCallback(
+    ({ amount, provider, category, dueDate, description }) => {
+      const debt = {
+        id: generateId('debt'),
+        name: provider,
+        amount: Number(amount),
+        remaining: Number(amount),
+        dueDate,
+        category,
+        status: 'active',
+      };
+      const transaction = {
+        id: generateId('tx'),
+        type: 'debt',
+        debtId: debt.id,
+        amount: Number(amount),
+        category,
+        description: description || provider,
+        date: dueDate,
+      };
+      setData((prev) => ({
+        ...prev,
+        transactions: [transaction, ...prev.transactions],
+        debts: [debt, ...prev.debts],
+      }));
+      return { transaction, debt };
+    },
+    [setData]
+  );
+
+  const addIncomeTransaction = useCallback(
+    ({ amount, source, description, date }) => {
+      const transaction = {
+        id: generateId('tx'),
+        type: 'income',
+        amount: Number(amount),
+        category: source,
+        description: description || '',
+        date,
+      };
+      setData((prev) => ({
+        ...prev,
+        transactions: [transaction, ...prev.transactions],
+      }));
+      return transaction;
+    },
+    [setData]
+  );
+
+  const addDebtManually = useCallback(
+    ({ name, amount, dueDate, category }) => {
+      const debt = {
+        id: generateId('debt'),
+        name,
+        amount: Number(amount),
+        remaining: Number(amount),
+        dueDate,
+        category: category || 'Other',
+        status: 'active',
+      };
+      setData((prev) => ({
+        ...prev,
+        debts: [debt, ...prev.debts],
+      }));
+      return debt;
+    },
+    [setData]
+  );
+
+  const payDebt = useCallback(
+    (debtId, paymentAmount) => {
+      setData((prev) => ({
+        ...prev,
+        debts: prev.debts.map((d) => {
+          if (d.id !== debtId) return d;
+          const remaining = Math.max(0, Number(d.remaining) - Number(paymentAmount));
+          return {
+            ...d,
+            remaining,
+            status: remaining === 0 ? 'paid' : 'active',
+          };
+        }),
+      }));
+    },
+    [setData]
+  );
+
+  const markDebtPaid = useCallback(
+    (debtId) => {
+      setData((prev) => ({
+        ...prev,
+        debts: prev.debts.map((d) =>
+          d.id === debtId ? { ...d, remaining: 0, status: 'paid' } : d
+        ),
+      }));
+    },
+    [setData]
+  );
+
+  const markDebtUnpaid = useCallback(
+    (debtId) => {
+      setData((prev) => ({
+        ...prev,
+        debts: prev.debts.map((d) =>
+          d.id === debtId
+            ? { ...d, remaining: Number(d.amount), status: 'active' }
+            : d
+        ),
+      }));
+    },
+    [setData]
+  );
+
+  const updateTransaction = useCallback(
+    (transactionId, updates) => {
+      setData((prev) => {
+        const existing = prev.transactions.find((t) => t.id === transactionId);
+        const nextDebts =
+          existing?.debtId && updates.date
+            ? prev.debts.map((d) =>
+                d.id === existing.debtId ? { ...d, dueDate: updates.date } : d
+              )
+            : prev.debts;
+
+        return {
+          ...prev,
+          debts: nextDebts,
+          transactions: prev.transactions.map((t) => {
+            if (t.id !== transactionId) return t;
+            return {
+              ...t,
+              ...updates,
+              amount: Number(updates.amount ?? t.amount),
+            };
+          }),
+        };
+      });
+    },
+    [setData]
+  );
+
+  const deleteTransaction = useCallback(
+    (transactionId) => {
+      setData((prev) => ({
+        ...prev,
+        transactions: prev.transactions.filter((t) => t.id !== transactionId),
+      }));
+    },
+    [setData]
+  );
+
+  const exportData = useCallback(() => {
+    return JSON.stringify(data, null, 2);
+  }, [data]);
+
+  const importData = useCallback(
+    (jsonString) => {
+      const parsed = JSON.parse(jsonString);
+      if (!parsed.transactions || !parsed.debts) {
+        throw new Error('Invalid data format');
+      }
+      setData(parsed, { immediate: true });
+    },
+    [setData]
+  );
+
+  const clearData = useCallback(() => {
+    setData(createInitialData(), { immediate: true });
+  }, [setData]);
+
+  const depositSavings = useCallback(
+    (amount, note) => {
+      setData((prev) => applySavingsDeposit(normalizeSavingsData(prev), amount, note));
+    },
+    [setData]
+  );
+
+  const withdrawSavings = useCallback(
+    (amount, note) => {
+      setData((prev) => applySavingsWithdraw(normalizeSavingsData(prev), amount, note));
+    },
+    [setData]
+  );
+
+  const updateSavingsGoal = useCallback(
+    (goal) => {
+      const value = Math.max(1, Number(goal) || 5000);
+      setData((prev) => ({ ...prev, savingsGoal: value }));
+    },
+    [setData]
+  );
+
+  const openAddTransaction = useCallback((options = {}) => {
+    setAddTransactionModal({
+      mode: options.mode || 'cash',
+      source: options.source || null,
+    });
+  }, []);
+
+  const closeAddTransaction = useCallback(() => {
+    setAddTransactionModal(null);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      data,
+      monthKey,
+      stats,
+      selectedCalendarDate,
+      setSelectedCalendarDate,
+      addTransactionModal,
+      openAddTransaction,
+      closeAddTransaction,
+      syncStatus,
+      syncError,
+      cloudEnabled,
+      cloudSyncHint,
+      refreshing,
+      refreshData,
+      updateSalary,
+      updateBudgets,
+      addCashTransaction,
+      addDebtTransaction,
+      addIncomeTransaction,
+      addDebtManually,
+      payDebt,
+      markDebtPaid,
+      markDebtUnpaid,
+      updateTransaction,
+      deleteTransaction,
+      exportData,
+      importData,
+      clearData,
+      depositSavings,
+      withdrawSavings,
+      updateSavingsGoal,
+    }),
+    [
+      data,
+      monthKey,
+      stats,
+      selectedCalendarDate,
+      setSelectedCalendarDate,
+      addTransactionModal,
+      openAddTransaction,
+      closeAddTransaction,
+      syncStatus,
+      syncError,
+      cloudEnabled,
+      cloudSyncHint,
+      refreshing,
+      refreshData,
+      updateSalary,
+      updateBudgets,
+      addCashTransaction,
+      addDebtTransaction,
+      addIncomeTransaction,
+      addDebtManually,
+      payDebt,
+      markDebtPaid,
+      markDebtUnpaid,
+      updateTransaction,
+      deleteTransaction,
+      exportData,
+      importData,
+      clearData,
+      depositSavings,
+      withdrawSavings,
+      updateSavingsGoal,
+    ]
+  );
+
+  if (loading && !hasCachedData) {
+    return <LoadingScreen />;
+  }
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp() {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+  return context;
+}

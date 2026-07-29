@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   loadEnv(mode, process.cwd(), '');
 
   return {
+  publicDir: 'frontend/public',
   assetsInclude: ['**/*.glb'],
   plugins: [
     react(),

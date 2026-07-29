@@ -9,16 +9,16 @@
   "scripts": {
     "dev": "vite",
     "dev:full": "vercel dev --listen 3005",
-    "prebuild": "node scripts/check-serverless-count.js",
+    "prebuild": "node backend/scripts/check-serverless-count.js",
     "build": "vite build",
-    "check:env": "node scripts/check-env.js",
-    "check:api": "node scripts/check-serverless-count.js",
+    "check:env": "node backend/scripts/check-env.js",
+    "check:api": "node backend/scripts/check-serverless-count.js",
     "test:deploy": "node test.js",
     "preview": "vite preview",
-    "mongo:init": "node scripts/init-collections.js",
-    "mongo:check": "node scripts/check-mongo-atlas.js",
-    "mongo:migrate": "node scripts/migrate-split-collections.js",
-    "mongo:migrate-savings": "node scripts/migrate-savings-entries.js"
+    "mongo:init": "node backend/scripts/init-collections.js",
+    "mongo:check": "node backend/scripts/check-mongo-atlas.js",
+    "mongo:migrate": "node backend/scripts/migrate-split-collections.js",
+    "mongo:migrate-savings": "node backend/scripts/migrate-savings-entries.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

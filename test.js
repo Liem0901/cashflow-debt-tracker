@@ -70,7 +70,7 @@ function checkLocalReady() {
     fail('vercel.json missing /api → handler rewrite');
   }
 
-  const check = spawnSync(process.execPath, ['scripts/check-serverless-count.js'], {
+  const check = spawnSync(process.execPath, ['backend/scripts/check-serverless-count.js'], {
     cwd: rootDir,
     encoding: 'utf8',
   });

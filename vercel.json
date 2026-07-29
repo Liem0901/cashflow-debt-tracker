@@ -6,7 +6,7 @@
   "functions": {
     "api/handler.js": {
       "maxDuration": 30,
-      "includeFiles": "server/**",
+      "includeFiles": "backend/server/**",
       "regions": ["sin1"]
     }
   },

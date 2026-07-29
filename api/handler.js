@@ -1,7 +1,7 @@
-import { handleUserData } from '../server/routes/userRoutes.js';
-import { handleAdmin } from '../server/routes/adminRoutes.js';
-import { handleAiChat } from '../server/routes/aiRoutes.js';
-import { handleHealth } from '../server/controllers/healthController.js';
+import { handleUserData } from '../backend/server/routes/userRoutes.js';
+import { handleAdmin } from '../backend/server/routes/adminRoutes.js';
+import { handleAiChat } from '../backend/server/routes/aiRoutes.js';
+import { handleHealth } from '../backend/server/controllers/healthController.js';
 
 function getPath(req) {
   const raw = req.query.path;
