@@ -12,7 +12,12 @@ import {
   getDashboardStats,
   getBaseSalaryForMonth,
 } from '../utils/calculations';
-import { normalizeSavingsData, applySavingsDeposit, applySavingsWithdraw } from '../utils/savings';
+import {
+  normalizeSavingsData,
+  applySavingsDeposit,
+  applySavingsWithdraw,
+  applyAutoMonthEndSave,
+} from '../utils/savings';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
 const AppContext = createContext(null);

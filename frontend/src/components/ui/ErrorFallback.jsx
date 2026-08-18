@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 const DEFAULT_MESSAGE =
   "An unexpected error occurred while loading this page. Don't worry, your data is safe.";
 
@@ -32,13 +30,13 @@ export default function ErrorFallback({ message = DEFAULT_MESSAGE }) {
             Reload Page
           </button>
 
-          <Link
-            to="/"
+          <a
+            href="/"
             className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-white transition hover:bg-white/10"
           >
             <i className="bi bi-house-door mr-2" />
             Back to Home
-          </Link>
+          </a>
         </div>
 
         <p className="mt-6 text-xs text-portfolio-gray">

@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -74,6 +76,15 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    if (isAuthBypassed || !isFirebaseConfigured || !auth) return;
+
+    getRedirectResult(auth).catch((err) => {
+      const message = mapAuthError(err);
+      if (message) setError(message);
+    });
+  }, []);
+
   const user = firebaseUser || guestUser;
   const isGuest = Boolean(!firebaseUser && guestUser);
 
@@ -92,6 +103,16 @@ export function AuthProvider({ children }) {
       await signInWithPopup(auth, googleProvider);
       return true;
     } catch (err) {
+      if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/cancelled-popup-request') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectErr) {
+          const message = mapAuthError(redirectErr);
+          if (message) setError(message);
+        }
+        return false;
+      }
+
       const message = mapAuthError(err);
       if (message) setError(message);
       return false;

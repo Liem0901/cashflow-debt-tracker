@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
@@ -13,6 +13,7 @@ function getPostLoginPath(from) {
 
 export default function LoginPage() {
   const {
+    user,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
@@ -24,6 +25,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = getPostLoginPath(location.state?.from);
+
+  useEffect(() => {
+    if (user) navigate(redirectTo, { replace: true });
+  }, [user, navigate, redirectTo]);
 
   const [mode, setMode] = useState('signin'); // signin | signup
   const [email, setEmail] = useState('');
